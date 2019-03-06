@@ -1,0 +1,1 @@
+stm32f723_highspeed_usb_bridge\startup_stm32f723xx.o: startup_stm32f723xx.s
