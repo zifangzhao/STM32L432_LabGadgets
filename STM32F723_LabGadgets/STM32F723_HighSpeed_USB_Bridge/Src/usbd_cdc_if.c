@@ -52,6 +52,7 @@
 
 /* USER CODE BEGIN INCLUDE */
 #include "dataMGR.h"
+#include "CE32_HJ580.h"
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,6 +66,8 @@ extern uint8_t data_buf_TX[BUF_SIZE];		// This records @ 20kHz x 32CH
 
 extern dataMGR MGR_RX;
 extern dataMGR MGR_TX;
+
+extern UART_HandleTypeDef huart6;
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -258,7 +261,29 @@ static int8_t CDC_Control_HS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
   case CDC_SET_LINE_CODING:
+		huart6.Instance = USART6;
+		huart6.Init.BaudRate = *(uint32_t*)pbuf;
+		huart6.Init.WordLength = UART_WORDLENGTH_8B;
+		huart6.Init.StopBits = UART_STOPBITS_1;
+		huart6.Init.Parity = UART_PARITY_NONE;
+		huart6.Init.Mode = UART_MODE_TX_RX;
+		huart6.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+		huart6.Init.OverSampling = UART_OVERSAMPLING_16;
+		huart6.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+		huart6.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+		if (HAL_UART_Init(&huart6) != HAL_OK)
+		{
+			Error_Handler();
+		}
+		UART_DMA_Init();
+		USART6->CR1|=USART_CR1_RXNEIE;  //Enable RX interrput to receive commands
 
+		//configure USART6 DMA
+		DMA2_Stream7->PAR = (uint32_t)&USART6->TDR;
+		//DMA2_Stream1->PAR = (uint32_t)&USART6->RDR;
+		UART_DISABLE(USART6);
+		//SET_BIT(USART6->CR3, USART_CR3_DMAT); //enable UART_DMA_request
+		UART_ENABLE(USART6);
     break;
 
   case CDC_GET_LINE_CODING:

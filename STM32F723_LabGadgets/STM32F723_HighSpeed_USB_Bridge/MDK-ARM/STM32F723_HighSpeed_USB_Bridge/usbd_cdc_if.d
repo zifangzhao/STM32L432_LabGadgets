@@ -47,3 +47,6 @@ stm32f723_highspeed_usb_bridge\usbd_cdc_if.o: ../Middlewares/ST/STM32_USB_Device
 stm32f723_highspeed_usb_bridge\usbd_cdc_if.o: ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h
 stm32f723_highspeed_usb_bridge\usbd_cdc_if.o: ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h
 stm32f723_highspeed_usb_bridge\usbd_cdc_if.o: ../Inc/dataMGR.h
+stm32f723_highspeed_usb_bridge\usbd_cdc_if.o: ../Inc/CE32_HJ580.h
+stm32f723_highspeed_usb_bridge\usbd_cdc_if.o: ../Inc/dataMGR.h
+stm32f723_highspeed_usb_bridge\usbd_cdc_if.o: ../Inc/CE32_macro.h
