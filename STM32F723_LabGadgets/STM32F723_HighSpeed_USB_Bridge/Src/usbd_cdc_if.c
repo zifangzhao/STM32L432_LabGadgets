@@ -261,6 +261,7 @@ static int8_t CDC_Control_HS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
   case CDC_SET_LINE_CODING:
+		UART_DISABLE(USART6);
 		huart6.Instance = USART6;
 		huart6.Init.BaudRate = *(uint32_t*)pbuf;
 		huart6.Init.WordLength = UART_WORDLENGTH_8B;
@@ -281,8 +282,10 @@ static int8_t CDC_Control_HS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 		//configure USART6 DMA
 		DMA2_Stream7->PAR = (uint32_t)&USART6->TDR;
 		//DMA2_Stream1->PAR = (uint32_t)&USART6->RDR;
-		UART_DISABLE(USART6);
+		
 		//SET_BIT(USART6->CR3, USART_CR3_DMAT); //enable UART_DMA_request
+		dataMGR_init(&MGR_TX,(char*) data_buf_TX,sizeof(data_buf_TX));					//FIFO setup 
+		dataMGR_init(&MGR_RX,(char*) data_buf_RX,sizeof(data_buf_RX));					//RX FIFO setup 
 		UART_ENABLE(USART6);
     break;
 

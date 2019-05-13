@@ -200,7 +200,7 @@ int main(void)
 	//DMA2_Stream1->PAR = (uint32_t)&USART6->RDR;
 	UART_DISABLE(USART6);
 	//SET_BIT(USART6->CR3, USART_CR3_DMAT); //enable UART_DMA_request
-	UART_ENABLE(USART6);
+	//UART_ENABLE(USART6);
   /* USER CODE END 2 */
 
   /* Infinite loop */
