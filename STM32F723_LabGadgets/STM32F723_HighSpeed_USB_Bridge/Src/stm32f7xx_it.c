@@ -40,10 +40,10 @@
 /* USER CODE BEGIN Includes */
 #include "dataMGR.h"
 #include "stm32f7xx_hal_dma.h"
-#include "CE32_HJ580.h"
+#include "CE32_ioncom.h"
 #include "CE32_macro.h"
 /* USER CODE END Includes */
-
+  
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
 
@@ -68,6 +68,8 @@ extern uint8_t data_buf_TX[BUF_SIZE];		// This records @ 20kHz x 32CH
 extern dataMGR MGR_RX;
 extern dataMGR MGR_TX;
 
+extern struct CE32_IONCOM_Handle IC_handle;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -84,8 +86,11 @@ extern dataMGR MGR_TX;
 extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 extern DMA_HandleTypeDef hdma_sai2_a;
 extern DMA_HandleTypeDef hdma_sai2_b;
+extern DMA_HandleTypeDef hdma_uart7_rx;
+extern DMA_HandleTypeDef hdma_uart7_tx;
 extern DMA_HandleTypeDef hdma_usart6_rx;
 extern DMA_HandleTypeDef hdma_usart6_tx;
+extern UART_HandleTypeDef huart7;
 extern UART_HandleTypeDef huart6;
 extern TIM_HandleTypeDef htim1;
 
@@ -230,6 +235,55 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles DMA1 stream1 global interrupt.
+  */
+void DMA1_Stream1_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream1_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_uart7_tx);
+  /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA1 stream3 global interrupt.
+  */
+void DMA1_Stream3_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream3_IRQn 0 */
+	//DMA1_Stream2->CR &=  ~DMA_IT_TC;
+	//__HAL_SPI_DISABLE(&hspi1);
+	
+	//MGR.state=hspi1.Instance->DR;			//Retrive last data stored in DR to avoid future data corruption
+ 	DMA_Base_Registers *regs = (DMA_Base_Registers *)  hdma_uart7_rx.StreamBaseAddress;
+	regs->IFCR = DMA_FLAG_TCIF0_4 << hdma_uart7_rx.StreamIndex;
+	//regs->IFCR = DMA_FLAG_TEIF0_4 << hdma_uart7_tx.StreamIndex;
+	regs->IFCR = DMA_FLAG_HTIF0_4<< hdma_uart7_rx.StreamIndex;
+	//regs->IFCR = DMA_FLAG_FEIF0_4 << hdma_uart7_tx.StreamIndex;
+	
+  /* USER CODE END DMA1_Stream3_IRQn 0 */
+  //HAL_DMA_IRQHandler(&hdma_uart7_rx);
+  /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
+
+	dataMGR_enQueue_Nbytes(&IC_handle.RX_MGR,IC_handle.DMA_TransSize);
+	UART_IONCOM_Bank_EnqueueBank(&IC_handle);
+	if((IC_handle.huart->hdmarx->Instance->CR&DMA_SxCR_CT)!=0) //Check which buffer is being used currently
+	{
+		IC_handle.huart->hdmarx->Instance->M0AR = (uint32_t)IC_handle.RX_MGR.dataPtr + IC_handle.DMA_bank_in*(IC_handle.DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
+	}
+	else
+	{
+		IC_handle.huart->hdmarx->Instance->M1AR = (uint32_t)IC_handle.RX_MGR.dataPtr + IC_handle.DMA_bank_in*(IC_handle.DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
+	}
+	//DMA1_Stream2->CR =  DMA_IT_TC;
+	
+  /* USER CODE END DMA1_Stream3_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
   */
 void TIM1_UP_TIM10_IRQHandler(void)
@@ -304,10 +358,10 @@ void DMA2_Stream7_IRQHandler(void)
   //HAL_DMA_IRQHandler(&hdma_spi1_tx);
   /* USER CODE BEGIN DMA2_Stream2_IRQn 1 */
 	CLEAR_BIT(USART6->CR3, USART_CR3_DMAT); //DISABLE UART_DMA_request
-	DMA_DISABLE(HJ_DMA_TX);
+	//DMA_DISABLE(HJ_DMA_TX);
 	MGR_TX.logState&=~MGR_STATE_TRANSBUSY;
   /* USER CODE END DMA2_Stream7_IRQn 0 */
-  //HAL_DMA_IRQHandler(&hdma_usart6_tx);
+  HAL_DMA_IRQHandler(&hdma_usart6_tx);
   /* USER CODE BEGIN DMA2_Stream7_IRQn 1 */
 
   /* USER CODE END DMA2_Stream7_IRQn 1 */
@@ -341,9 +395,8 @@ void USART6_IRQHandler(void)
 			}
 		}
 	}
-	
   /* USER CODE END USART6_IRQn 0 */
-  //HAL_UART_IRQHandler(&huart6);
+  HAL_UART_IRQHandler(&huart6);
   /* USER CODE BEGIN USART6_IRQn 1 */
 	//Clear interrupt
 	USART6->ICR=USART_ICR_ORECF;
@@ -362,6 +415,41 @@ void OTG_HS_IRQHandler(void)
   /* USER CODE BEGIN OTG_HS_IRQn 1 */
 
   /* USER CODE END OTG_HS_IRQn 1 */
+}
+
+/**
+  * @brief This function handles UART7 global interrupt.
+  */
+void UART7_IRQHandler(void)
+{
+  /* USER CODE BEGIN UART7_IRQn 0 */
+	uint32_t isrflags   = READ_REG(huart7.Instance->ISR); //read ISR flag
+	if((isrflags&(uint32_t)(USART_ISR_RXNE))!=0)
+	{
+		char data=huart7.Instance->RDR&0xff; //read data
+		dataMGR_enQueue_byte(&MGR_RX,data);
+	}
+	//TX ISR
+	if((huart7.Instance->CR1&USART_CR1_TXEIE)!=0)
+	{		
+		if((isrflags&(uint32_t)(USART_ISR_TXE))!=0)
+		{
+			if(MGR_TX.bufferUsed[0]>0)
+			{
+				UART7->TDR=dataMGR_deQueue_byte(&MGR_TX,0);
+			}
+			else
+			{
+				MGR_TX.logState&=~MGR_STATE_TRANSBUSY;
+				CLEAR_BIT(huart7.Instance->CR1, USART_CR1_TXEIE); //clear TXE interrupt if buffer is empty
+			}
+		}
+	}
+  /* USER CODE END UART7_IRQn 0 */
+  HAL_UART_IRQHandler(&huart7);
+  /* USER CODE BEGIN UART7_IRQn 1 */
+	UART7->ICR=USART_ICR_ORECF;
+  /* USER CODE END UART7_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

@@ -7,9 +7,9 @@
 #define __CE32_HJ580
 
 //Define the following part accroding to the project setup
-#define HJ_UART USART6
-#define HJ_UART_IRQn USART6_IRQn
-#define HJ_DMA_TX DMA2_Stream7
+#define HJ_UART UART7
+#define HJ_UART_IRQn UART7_IRQn
+#define HJ_DMA_TX DMA1_Stream1
 
 //#ifndef HJ_CONFIG_GPIO_Port
 //	#define HJ_CONFIG_GPIO_Port GPIOA
@@ -103,7 +103,7 @@ __forceinline void UART_DMA_Init(void){
 	HJ_DMA_TX->PAR = (uint32_t)&HJ_UART->TDR;
 	UART_DISABLE(HJ_UART);
 	SET_BIT(HJ_UART->CR3, USART_CR3_DMAT); //enable UART_DMA_request
-	UART_ENABLE(HJ_UART);
+	//UART_ENABLE(HJ_UART);
 }
 
 __forceinline void UART_DMA_Enable(void){

@@ -55,7 +55,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "dataMGR.h"
-#include "CE32_HJ580.h"
+#include "CE32_ioncom.h"
 #include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
@@ -88,7 +88,10 @@ TIM_HandleTypeDef htim9;
 TIM_HandleTypeDef htim12;
 
 UART_HandleTypeDef huart5;
+UART_HandleTypeDef huart7;
 UART_HandleTypeDef huart6;
+DMA_HandleTypeDef hdma_uart7_rx;
+DMA_HandleTypeDef hdma_uart7_tx;
 DMA_HandleTypeDef hdma_usart6_rx;
 DMA_HandleTypeDef hdma_usart6_tx;
 
@@ -99,7 +102,7 @@ int retries;
 int WaitCyc;
 uint8_t data_buf_RX[BUF_SIZE];		// This records @ 20kHz x 32CH
 uint8_t data_buf_TX[BUF_SIZE];		// This records @ 20kHz x 32CH
-uint8_t data_buf_RX_CDC[BUF_SIZE];
+//uint8_t data_buf_RX_CDC[BUF_SIZE];
 uint16_t misc_DigiSig;
 uint8_t rec_cnt;
 uint32_t log_cnt;
@@ -120,7 +123,9 @@ int freq;
 
 const uint16_t RX_size=1000;
 
+struct CE32_IONCOM_Handle IC_handle;
 
+extern USBD_HandleTypeDef hUsbDeviceFS;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -135,6 +140,7 @@ static void MX_TIM9_Init(void);
 static void MX_TIM12_Init(void);
 static void MX_USART6_UART_Init(void);
 static void MX_UART5_Init(void);
+static void MX_UART7_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -153,6 +159,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
+  
 
   /* Enable I-Cache---------------------------------------------------------*/
   SCB_EnableICache();
@@ -186,21 +193,31 @@ int main(void)
   MX_TIM9_Init();
   MX_TIM12_Init();
   MX_USART6_UART_Init();
-  MX_USB_DEVICE_Init();
+  
   MX_UART5_Init();
+  MX_UART7_Init();
   /* USER CODE BEGIN 2 */
 	dataMGR_init(&MGR_TX,(char*) data_buf_TX,sizeof(data_buf_TX));					//FIFO setup 
 	dataMGR_init(&MGR_RX,(char*) data_buf_RX,sizeof(data_buf_RX));					//RX FIFO setup 
+	
+	IC_handle.DMA_TotalBanks=16;
+	IC_handle.DMA_TransSize=BUF_SIZE/IC_handle.DMA_TotalBanks;
+	IC_handle.huart=&huart7;
+	IC_handle.IRQn=UART7_IRQn;
+	IC_handle.huart->hdmatx->Instance=DMA1_Stream1;
+	IC_handle.huart->hdmarx->Instance=DMA1_Stream3;
+	IC_handle.config|=(IONCOM_CONFIG_RXDMA|IONCOM_CONFIG_TXDMA);
+	CE32_Ioncom_Init(&IC_handle,(char*)data_buf_RX,sizeof(data_buf_RX),(char*)data_buf_TX,(uint16_t)sizeof(data_buf_TX));
+	UART_IONCOM_DMA_Init(&IC_handle);
+	UART_DISABLE(IC_handle.huart->Instance);					//Disable UART temporarly to avoid interferece with initialization
+	
+	IC_handle.huart->hdmarx->Instance->M0AR = (uint32_t)IC_handle.RX_MGR.dataPtr; //Set the DMA to be in circular mode and automatic filling the buffer
+	IC_handle.huart->hdmarx->Instance->NDTR = IC_handle.RX_MGR.dataSize;
+	
+	//UART7->CR1|=USART_CR1_RXNEIE;  //Enable RX interrput to receive commands
 
-	UART_DMA_Init();
-	USART6->CR1|=USART_CR1_RXNEIE;  //Enable RX interrput to receive commands
-
-	//configure USART6 DMA
-	DMA2_Stream7->PAR = (uint32_t)&USART6->TDR;
-	//DMA2_Stream1->PAR = (uint32_t)&USART6->RDR;
-	UART_DISABLE(USART6);
-	//SET_BIT(USART6->CR3, USART_CR3_DMAT); //enable UART_DMA_request
-	//UART_ENABLE(USART6);
+	MX_USB_DEVICE_Init();
+	
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -210,35 +227,23 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		int pend_size=MGR_RX.bufferUsed[0];
-		if(pend_size>0)
+		//DIrect mode
+		if((IC_handle.DMA_BankPend>0) && ((IC_handle.huart->Instance->CR1&USART_CR1_UE)!=0))
 		{
-			int tillEnd=MGR_RX.dataSize-MGR_RX.outPTR[0];
-			int tranSize;
-			if(tillEnd>=pend_size)
+			int ByteToSend=IC_handle.DMA_TransSize;
+//			for(int i=0;i<ByteToSend;i++)
+//			{
+//				//Direct forwarding mode
+//				data_buf_RX_CDC[i]=data_buf_RX[(MGR_RX.outPTR[0]+i)&BUF_MASK];
+//			}
+//			USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
+//			while (hcdc->TxState != 0) {};
+//			CDC_Transmit_FS((uint8_t*)(data_buf_RX+IC_handle.DMA_bank_out*IC_handle.DMA_TransSize),ByteToSend);
+			if(CDC_Transmit_HS((uint8_t*)(data_buf_RX+IC_handle.DMA_bank_out*IC_handle.DMA_TransSize),ByteToSend)==USBD_OK)
 			{
-				tranSize=pend_size;
-			}
-			else
-			{
-				tranSize=tillEnd;
-			}
-			
-			for(int i=0;i<tranSize;i++)
-			{
-				data_buf_RX_CDC[i]=data_buf_RX[MGR_RX.outPTR[0]+i];
-			}
-			if(CDC_Transmit_HS((uint8_t*)(&data_buf_RX_CDC),tranSize)==USBD_OK)
-			{
-				dataMGR_deQueue(&MGR_RX,tranSize,0);
+				UART_IONCOM_Bank_DequeueBank(&IC_handle);
+				dataMGR_deQueue(&MGR_RX,ByteToSend,0);
 			}				
-		}
-		
-		pend_size=MGR_TX.bufferUsed[0];
-		if(pend_size>0)
-		{
-			USART6->CR1|=USART_CR1_TXEIE;  //Enable RX interrput to receive commands
-			MGR_TX.logState|=MGR_STATE_TRANSBUSY;
 		}
 	}
   /* USER CODE END 3 */
@@ -254,14 +259,14 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
-  /**Configure LSE Drive Capability 
+  /** Configure LSE Drive Capability 
   */
   HAL_PWR_EnableBkUpAccess();
-  /**Configure the main internal regulator output voltage 
+  /** Configure the main internal regulator output voltage 
   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /**Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
@@ -275,13 +280,13 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /**Activate the Over-Drive mode 
+  /** Activate the Over-Drive mode 
   */
   if (HAL_PWREx_EnableOverDrive() != HAL_OK)
   {
     Error_Handler();
   }
-  /**Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -295,7 +300,8 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART6|RCC_PERIPHCLK_UART5
-                              |RCC_PERIPHCLK_SAI2|RCC_PERIPHCLK_CLK48;
+                              |RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_SAI2
+                              |RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
   PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
   PeriphClkInitStruct.PLLSAI.PLLSAIP = RCC_PLLSAIP_DIV2;
@@ -303,6 +309,7 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.Sai2ClockSelection = RCC_SAI2CLKSOURCE_PLLSAI;
   PeriphClkInitStruct.Uart5ClockSelection = RCC_UART5CLKSOURCE_SYSCLK;
   PeriphClkInitStruct.Usart6ClockSelection = RCC_USART6CLKSOURCE_SYSCLK;
+  PeriphClkInitStruct.Uart7ClockSelection = RCC_UART7CLKSOURCE_SYSCLK;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
@@ -660,6 +667,41 @@ static void MX_UART5_Init(void)
 }
 
 /**
+  * @brief UART7 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_UART7_Init(void)
+{
+
+  /* USER CODE BEGIN UART7_Init 0 */
+
+  /* USER CODE END UART7_Init 0 */
+
+  /* USER CODE BEGIN UART7_Init 1 */
+
+  /* USER CODE END UART7_Init 1 */
+  huart7.Instance = UART7;
+  huart7.Init.BaudRate = 2000000;
+  huart7.Init.WordLength = UART_WORDLENGTH_8B;
+  huart7.Init.StopBits = UART_STOPBITS_1;
+  huart7.Init.Parity = UART_PARITY_NONE;
+  huart7.Init.Mode = UART_MODE_TX_RX;
+  huart7.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart7.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart7.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart7.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN UART7_Init 2 */
+
+  /* USER CODE END UART7_Init 2 */
+
+}
+
+/**
   * @brief USART6 Initialization Function
   * @param None
   * @retval None
@@ -675,7 +717,7 @@ static void MX_USART6_UART_Init(void)
 
   /* USER CODE END USART6_Init 1 */
   huart6.Instance = USART6;
-  huart6.Init.BaudRate = 6000000;
+  huart6.Init.BaudRate = 12000000;
   huart6.Init.WordLength = UART_WORDLENGTH_8B;
   huart6.Init.StopBits = UART_STOPBITS_1;
   huart6.Init.Parity = UART_PARITY_NONE;
@@ -701,19 +743,26 @@ static void MX_DMA_Init(void)
 {
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
+  /* DMA1_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 1, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
   /* DMA2_Stream1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
   /* DMA2_Stream4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream4_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream4_IRQn, 1, 1);
   HAL_NVIC_EnableIRQ(DMA2_Stream4_IRQn);
   /* DMA2_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 1, 2);
   HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
   /* DMA2_Stream7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 1, 3);
   HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
 
 }
@@ -974,14 +1023,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.Alternate = GPIO_AF4_I2C2;
   HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PMOD_UART7_TXD_Pin PMOD_UART7_RXD_Pin PMOD_UART7_CTS_Pin PMOD_UART7_RTS_Pin */
-  GPIO_InitStruct.Pin = PMOD_UART7_TXD_Pin|PMOD_UART7_RXD_Pin|PMOD_UART7_CTS_Pin|PMOD_UART7_RTS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF8_UART7;
-  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /*Configure GPIO pin : ARD_A3_ADC3_IN8_Pin */
   GPIO_InitStruct.Pin = ARD_A3_ADC3_IN8_Pin;

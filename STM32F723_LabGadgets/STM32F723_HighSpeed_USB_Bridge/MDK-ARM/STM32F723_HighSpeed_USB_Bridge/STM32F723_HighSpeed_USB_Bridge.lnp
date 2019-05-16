@@ -1,6 +1,7 @@
 --cpu Cortex-M7.fp.sp --fpu=FPv4-SP
 "stm32f723_highspeed_usb_bridge\startup_stm32f723xx.o"
 "stm32f723_highspeed_usb_bridge\datamgr.o"
+"stm32f723_highspeed_usb_bridge\ce32_ioncom.o"
 "stm32f723_highspeed_usb_bridge\main.o"
 "stm32f723_highspeed_usb_bridge\usb_device.o"
 "stm32f723_highspeed_usb_bridge\usbd_conf.o"
@@ -18,6 +19,7 @@
 "stm32f723_highspeed_usb_bridge\stm32f7xx_hal_tim.o"
 "stm32f723_highspeed_usb_bridge\stm32f7xx_hal_tim_ex.o"
 "stm32f723_highspeed_usb_bridge\stm32f7xx_hal_uart.o"
+"stm32f723_highspeed_usb_bridge\stm32f7xx_hal_uart_ex.o"
 "stm32f723_highspeed_usb_bridge\stm32f7xx_hal_rcc.o"
 "stm32f723_highspeed_usb_bridge\stm32f7xx_hal_rcc_ex.o"
 "stm32f723_highspeed_usb_bridge\stm32f7xx_hal_flash.o"
@@ -30,6 +32,7 @@
 "stm32f723_highspeed_usb_bridge\stm32f7xx_hal.o"
 "stm32f723_highspeed_usb_bridge\stm32f7xx_hal_i2c.o"
 "stm32f723_highspeed_usb_bridge\stm32f7xx_hal_i2c_ex.o"
+"stm32f723_highspeed_usb_bridge\stm32f7xx_hal_exti.o"
 "stm32f723_highspeed_usb_bridge\system_stm32f7xx.o"
 "stm32f723_highspeed_usb_bridge\usbd_core.o"
 "stm32f723_highspeed_usb_bridge\usbd_ctlreq.o"
