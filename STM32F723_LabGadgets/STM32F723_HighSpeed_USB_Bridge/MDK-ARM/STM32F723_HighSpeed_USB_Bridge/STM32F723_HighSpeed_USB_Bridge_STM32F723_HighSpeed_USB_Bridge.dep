@@ -1,7 +1,7 @@
 Dependencies for Project 'STM32F723_HighSpeed_USB_Bridge', Target 'STM32F723_HighSpeed_USB_Bridge': (DO NOT MODIFY !)
 F (startup_stm32f723xx.s)(0x5CD9C897)(--cpu Cortex-M7.fp.sp --fpu=FPv4-SP -g --apcs=interwork --pd "__MICROLIB SETA 1"-I D:\code\uC\STM32_LabGadgets\STM32F723_LabGadgets\STM32F723_HighSpeed_USB_Bridge\MDK-ARM\RTE-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include--pd "__UVISION_VERSION SETA 515" --pd "_RTE_ SETA 1" --pd "STM32F723xx SETA 1"--list startup_stm32f723xx.lst --xref -o stm32f723_highspeed_usb_bridge\startup_stm32f723xx.o --depend stm32f723_highspeed_usb_bridge\startup_stm32f723xx.d)
 F (..\Src\dataMGR.c)(0x5C806808)(--c99 -c --cpu Cortex-M7.fp.sp --fpu=FPv4-SP -D__MICROLIB -g -O2 --apcs=interwork --split_sections -I../Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include-I D:\code\uC\STM32_LabGadgets\STM32F723_LabGadgets\STM32F723_HighSpeed_USB_Bridge\MDK-ARM\RTE-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="515" -D_RTE_ -DSTM32F723xx -DUSE_HAL_DRIVER -DSTM32F723xx-o stm32f723_highspeed_usb_bridge\datamgr.o --omf_browse stm32f723_highspeed_usb_bridge\datamgr.crf --depend stm32f723_highspeed_usb_bridge\datamgr.d)
-I (../Inc/dataMGR.h)(0x5CD9D8A8)
+I (../Inc/dataMGR.h)(0x5CDDCD4D)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h)(0x5CD9BD3D)
 I (../Inc/stm32f7xx_hal_conf.h)(0x5CD9C893)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h)(0x5CD9BD3D)
@@ -38,7 +38,7 @@ I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h)(0x5CD9BD3D)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h)(0x5CD9BD3D)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h)(0x5CD9BD3D)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h)(0x5CD9BD3D)
-F (..\Src\CE32_ioncom.c)(0x5CD9CD8C)(--c99 -c --cpu Cortex-M7.fp.sp --fpu=FPv4-SP -D__MICROLIB -g -O2 --apcs=interwork --split_sections -I../Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include-I D:\code\uC\STM32_LabGadgets\STM32F723_LabGadgets\STM32F723_HighSpeed_USB_Bridge\MDK-ARM\RTE-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="515" -D_RTE_ -DSTM32F723xx -DUSE_HAL_DRIVER -DSTM32F723xx-o stm32f723_highspeed_usb_bridge\ce32_ioncom.o --omf_browse stm32f723_highspeed_usb_bridge\ce32_ioncom.crf --depend stm32f723_highspeed_usb_bridge\ce32_ioncom.d)
+F (..\Src\CE32_ioncom.c)(0x5CDDCD5A)(--c99 -c --cpu Cortex-M7.fp.sp --fpu=FPv4-SP -D__MICROLIB -g -O2 --apcs=interwork --split_sections -I../Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include-I D:\code\uC\STM32_LabGadgets\STM32F723_LabGadgets\STM32F723_HighSpeed_USB_Bridge\MDK-ARM\RTE-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="515" -D_RTE_ -DSTM32F723xx -DUSE_HAL_DRIVER -DSTM32F723xx-o stm32f723_highspeed_usb_bridge\ce32_ioncom.o --omf_browse stm32f723_highspeed_usb_bridge\ce32_ioncom.crf --depend stm32f723_highspeed_usb_bridge\ce32_ioncom.d)
 I (../Inc/CE32_ioncom.h)(0x5CD9D616)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h)(0x5CD9BD3D)
 I (../Inc/stm32f7xx_hal_conf.h)(0x5CD9C893)
@@ -76,11 +76,11 @@ I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h)(0x5CD9BD3D)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h)(0x5CD9BD3D)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h)(0x5CD9BD3D)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h)(0x5CD9BD3D)
-I (../Inc/dataMGR.h)(0x5CD9D8A8)
+I (../Inc/dataMGR.h)(0x5CDDCD4D)
 I (../Inc/CE32_macro.h)(0x5C806808)
 I (../Inc/main.h)(0x5CD9C893)
 I (C:\Keil_v5\ARM\ARMCC\include\string.h)(0x54C30A98)
-F (../Src/main.c)(0x5CD9D854)(--c99 -c --cpu Cortex-M7.fp.sp --fpu=FPv4-SP -D__MICROLIB -g -O2 --apcs=interwork --split_sections -I../Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include-I D:\code\uC\STM32_LabGadgets\STM32F723_LabGadgets\STM32F723_HighSpeed_USB_Bridge\MDK-ARM\RTE-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="515" -D_RTE_ -DSTM32F723xx -DUSE_HAL_DRIVER -DSTM32F723xx-o stm32f723_highspeed_usb_bridge\main.o --omf_browse stm32f723_highspeed_usb_bridge\main.crf --depend stm32f723_highspeed_usb_bridge\main.d)
+F (../Src/main.c)(0x5CDDCD7C)(--c99 -c --cpu Cortex-M7.fp.sp --fpu=FPv4-SP -D__MICROLIB -g -O2 --apcs=interwork --split_sections -I../Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include-I D:\code\uC\STM32_LabGadgets\STM32F723_LabGadgets\STM32F723_HighSpeed_USB_Bridge\MDK-ARM\RTE-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="515" -D_RTE_ -DSTM32F723xx -DUSE_HAL_DRIVER -DSTM32F723xx-o stm32f723_highspeed_usb_bridge\main.o --omf_browse stm32f723_highspeed_usb_bridge\main.crf --depend stm32f723_highspeed_usb_bridge\main.d)
 I (../Inc/main.h)(0x5CD9C893)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h)(0x5CD9BD3D)
 I (../Inc/stm32f7xx_hal_conf.h)(0x5CD9C893)
@@ -124,7 +124,7 @@ I (../Inc/usbd_conf.h)(0x5CD9C891)
 I (C:\Keil_v5\ARM\ARMCC\include\stdio.h)(0x54C30A98)
 I (C:\Keil_v5\ARM\ARMCC\include\stdlib.h)(0x54C30A98)
 I (C:\Keil_v5\ARM\ARMCC\include\string.h)(0x54C30A98)
-I (../Inc/dataMGR.h)(0x5CD9D8A8)
+I (../Inc/dataMGR.h)(0x5CDDCD4D)
 I (../Inc/CE32_ioncom.h)(0x5CD9D616)
 I (../Inc/CE32_macro.h)(0x5C806808)
 I (../Inc/usbd_cdc_if.h)(0x5CD9C892)
@@ -275,7 +275,7 @@ I (../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h)(0x5CD9BD3F)
 I (../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h)(0x5CD9BD3F)
 I (../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h)(0x5CD9BD3F)
 I (../Inc/usbd_desc.h)(0x5CD9C892)
-F (../Src/usbd_cdc_if.c)(0x5CD9D851)(--c99 -c --cpu Cortex-M7.fp.sp --fpu=FPv4-SP -D__MICROLIB -g -O2 --apcs=interwork --split_sections -I../Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include-I D:\code\uC\STM32_LabGadgets\STM32F723_LabGadgets\STM32F723_HighSpeed_USB_Bridge\MDK-ARM\RTE-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="515" -D_RTE_ -DSTM32F723xx -DUSE_HAL_DRIVER -DSTM32F723xx-o stm32f723_highspeed_usb_bridge\usbd_cdc_if.o --omf_browse stm32f723_highspeed_usb_bridge\usbd_cdc_if.crf --depend stm32f723_highspeed_usb_bridge\usbd_cdc_if.d)
+F (../Src/usbd_cdc_if.c)(0x5CDDCB7A)(--c99 -c --cpu Cortex-M7.fp.sp --fpu=FPv4-SP -D__MICROLIB -g -O2 --apcs=interwork --split_sections -I../Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include-I D:\code\uC\STM32_LabGadgets\STM32F723_LabGadgets\STM32F723_HighSpeed_USB_Bridge\MDK-ARM\RTE-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="515" -D_RTE_ -DSTM32F723xx -DUSE_HAL_DRIVER -DSTM32F723xx-o stm32f723_highspeed_usb_bridge\usbd_cdc_if.o --omf_browse stm32f723_highspeed_usb_bridge\usbd_cdc_if.crf --depend stm32f723_highspeed_usb_bridge\usbd_cdc_if.d)
 I (../Inc/usbd_cdc_if.h)(0x5CD9C892)
 I (../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc/usbd_cdc.h)(0x5CD9BD3F)
 I (../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h)(0x5CD9BD3F)
@@ -323,7 +323,7 @@ I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h)(0x5CD9BD3D)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h)(0x5CD9BD3D)
 I (../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_core.h)(0x5CD9BD3F)
 I (../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h)(0x5CD9BD3F)
-I (../Inc/dataMGR.h)(0x5CD9D8A8)
+I (../Inc/dataMGR.h)(0x5CDDCD4D)
 I (../Inc/CE32_ioncom.h)(0x5CD9D616)
 I (../Inc/CE32_macro.h)(0x5C806808)
 F (../Src/stm32f7xx_it.c)(0x5CD9D43C)(--c99 -c --cpu Cortex-M7.fp.sp --fpu=FPv4-SP -D__MICROLIB -g -O2 --apcs=interwork --split_sections -I../Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include-I D:\code\uC\STM32_LabGadgets\STM32F723_LabGadgets\STM32F723_HighSpeed_USB_Bridge\MDK-ARM\RTE-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="515" -D_RTE_ -DSTM32F723xx -DUSE_HAL_DRIVER -DSTM32F723xx-o stm32f723_highspeed_usb_bridge\stm32f7xx_it.o --omf_browse stm32f723_highspeed_usb_bridge\stm32f7xx_it.crf --depend stm32f723_highspeed_usb_bridge\stm32f7xx_it.d)
@@ -365,7 +365,7 @@ I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h)(0x5CD9BD3D)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h)(0x5CD9BD3D)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h)(0x5CD9BD3D)
 I (../Inc/stm32f7xx_it.h)(0x5CD9C892)
-I (../Inc/dataMGR.h)(0x5CD9D8A8)
+I (../Inc/dataMGR.h)(0x5CDDCD4D)
 I (../Inc/CE32_ioncom.h)(0x5CD9D616)
 I (../Inc/CE32_macro.h)(0x5C806808)
 F (../Src/stm32f7xx_hal_msp.c)(0x5CD9C893)(--c99 -c --cpu Cortex-M7.fp.sp --fpu=FPv4-SP -D__MICROLIB -g -O2 --apcs=interwork --split_sections -I../Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc -I../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -I../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I../Drivers/CMSIS/Include-I D:\code\uC\STM32_LabGadgets\STM32F723_LabGadgets\STM32F723_HighSpeed_USB_Bridge\MDK-ARM\RTE-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\Include-I C:\Keil_v5\ARM\PACK\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="515" -D_RTE_ -DSTM32F723xx -DUSE_HAL_DRIVER -DSTM32F723xx-o stm32f723_highspeed_usb_bridge\stm32f7xx_hal_msp.o --omf_browse stm32f723_highspeed_usb_bridge\stm32f7xx_hal_msp.crf --depend stm32f723_highspeed_usb_bridge\stm32f7xx_hal_msp.d)

@@ -102,7 +102,7 @@ int retries;
 int WaitCyc;
 uint8_t data_buf_RX[BUF_SIZE];		// This records @ 20kHz x 32CH
 uint8_t data_buf_TX[BUF_SIZE];		// This records @ 20kHz x 32CH
-//uint8_t data_buf_RX_CDC[BUF_SIZE];
+uint8_t data_buf_RX_CDC[BUF_SIZE];
 uint16_t misc_DigiSig;
 uint8_t rec_cnt;
 uint32_t log_cnt;
@@ -113,6 +113,7 @@ uint32_t filePTR;	//recording pointer location (in 512B unit,real filelen=512*x)
 uint32_t updHeader;
 dataMGR MGR_TX;
 dataMGR MGR_RX;
+dataMGR MGR_CDC;
 dataMGR MGR_prev;
 dataMGR MGR_misc;
 dataMGR MGR_cmd;
@@ -199,6 +200,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	dataMGR_init(&MGR_TX,(char*) data_buf_TX,sizeof(data_buf_TX));					//FIFO setup 
 	dataMGR_init(&MGR_RX,(char*) data_buf_RX,sizeof(data_buf_RX));					//RX FIFO setup 
+	dataMGR_init(&MGR_CDC,(char*) data_buf_RX_CDC,sizeof(data_buf_RX_CDC));					//RX FIFO setup 
 	
 	IC_handle.DMA_TotalBanks=16;
 	IC_handle.DMA_TransSize=BUF_SIZE/IC_handle.DMA_TotalBanks;
@@ -228,21 +230,39 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 		//DIrect mode
-		if((IC_handle.DMA_BankPend>0) && ((IC_handle.huart->Instance->CR1&USART_CR1_UE)!=0))
+		while(IC_handle.RX_MGR.bufferUsed[0]>=148)
+		{
+			if((uint8_t)dataMGR_deQueue_byte(&IC_handle.RX_MGR,0)==0x66)
+			{
+				if((uint8_t)dataMGR_deQueue_byte(&IC_handle.RX_MGR,0)==0x55)
+				{
+					if((uint8_t)dataMGR_deQueue_byte(&IC_handle.RX_MGR,0)==0x5d)
+					{
+						if((uint8_t)dataMGR_deQueue_byte(&IC_handle.RX_MGR,0)==0xd5)
+						{
+							dataMGR_enQueue_byte(&MGR_CDC,0x66);
+							dataMGR_enQueue_byte(&MGR_CDC,0x55);
+							dataMGR_enQueue_byte(&MGR_CDC,0x5d);
+							dataMGR_enQueue_byte(&MGR_CDC,0xd5);
+							for(int i=0;i<144;i++)
+							{
+								while(IC_handle.RX_MGR.bufferUsed[0]<=0)
+								{
+								}
+								dataMGR_enQueue_byte(&MGR_CDC,(uint8_t)dataMGR_deQueue_byte(&IC_handle.RX_MGR,0));
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+		if(MGR_CDC.bufferUsed[0]>=IC_handle.DMA_TransSize && ((IC_handle.huart->Instance->CR1&USART_CR1_UE)!=0))
 		{
 			int ByteToSend=IC_handle.DMA_TransSize;
-//			for(int i=0;i<ByteToSend;i++)
-//			{
-//				//Direct forwarding mode
-//				data_buf_RX_CDC[i]=data_buf_RX[(MGR_RX.outPTR[0]+i)&BUF_MASK];
-//			}
-//			USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
-//			while (hcdc->TxState != 0) {};
-//			CDC_Transmit_FS((uint8_t*)(data_buf_RX+IC_handle.DMA_bank_out*IC_handle.DMA_TransSize),ByteToSend);
-			if(CDC_Transmit_HS((uint8_t*)(data_buf_RX+IC_handle.DMA_bank_out*IC_handle.DMA_TransSize),ByteToSend)==USBD_OK)
+			if(CDC_Transmit_HS((uint8_t*)(data_buf_RX_CDC+MGR_CDC.outPTR[0]),ByteToSend)==USBD_OK)
 			{
-				UART_IONCOM_Bank_DequeueBank(&IC_handle);
-				dataMGR_deQueue(&MGR_RX,ByteToSend,0);
+				dataMGR_deQueue(&MGR_CDC,ByteToSend,0);
 			}				
 		}
 	}

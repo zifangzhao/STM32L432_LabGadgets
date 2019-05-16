@@ -35,9 +35,10 @@
 /* Private variables ---------------------------------------------------------*/
 extern uint8_t data_buf_RX[BUF_SIZE];		// This records @ 20kHz x 32CH
 extern uint8_t data_buf_TX[BUF_SIZE];		// This records @ 20kHz x 32CH
-
+extern uint8_t data_buf_RX_CDC[BUF_SIZE];
 extern dataMGR MGR_RX;
 extern dataMGR MGR_TX;
+extern dataMGR MGR_CDC;
 
 extern UART_HandleTypeDef huart6;
 extern UART_HandleTypeDef huart7;
@@ -270,6 +271,7 @@ static int8_t CDC_Control_HS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 		
 		dataMGR_init(&MGR_TX,(char*) data_buf_TX,sizeof(data_buf_TX));					//FIFO setup 
 		dataMGR_init(&MGR_RX,(char*) data_buf_RX,sizeof(data_buf_RX));					//RX FIFO setup 
+		dataMGR_init(&MGR_CDC,(char*) data_buf_RX_CDC,sizeof(data_buf_RX_CDC));					//RX FIFO setup 
 		DMA_ENABLE(IC_handle.huart->hdmatx->Instance);
 		UART_ENABLE(IC_handle.huart->Instance);
     break;
