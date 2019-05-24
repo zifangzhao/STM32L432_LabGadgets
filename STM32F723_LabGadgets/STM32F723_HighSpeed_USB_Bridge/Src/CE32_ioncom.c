@@ -72,9 +72,14 @@ int CE32_Ioncom_Init(struct CE32_IONCOM_Handle *handle,char* RX_buf,uint32_t RX_
 
 int CE32_Ioncom_Setting(struct CE32_IONCOM_Handle *handle,char* RX_buf,uint32_t RX_size,char* TX_buf, uint32_t TX_size)
 {
-	dataMGR_init_DMA(&handle->RX_MGR,RX_buf,RX_size,(__IO uint32_t*)__NDTR_ADDR(handle->huart->hdmarx),(__IO uint32_t*)__NDTR_ADDR(handle->huart->hdmatx));
-	dataMGR_init_DMA(&handle->TX_MGR,TX_buf,TX_size,(__IO uint32_t*)__NDTR_ADDR(handle->huart->hdmarx),(__IO uint32_t*)__NDTR_ADDR(handle->huart->hdmatx));
-	
+	if((handle->config&IONCOM_CONFIG_RXDMA)!=0)
+	{
+		dataMGR_init_DMA(&handle->RX_MGR,RX_buf,RX_size,(__IO uint32_t*)__NDTR_ADDR(handle->huart->hdmarx),(__IO uint32_t*)__NDTR_ADDR(handle->huart->hdmarx));
+	}
+	if((handle->config&IONCOM_CONFIG_TXDMA)!=0)
+	{
+		dataMGR_init_DMA(&handle->TX_MGR,TX_buf,TX_size,(__IO uint32_t*)__NDTR_ADDR(handle->huart->hdmatx),(__IO uint32_t*)__NDTR_ADDR(handle->huart->hdmatx));
+	}
 	CE32_IonCom_Init_device(handle->huart,handle->IRQn);
 
 	return 0;

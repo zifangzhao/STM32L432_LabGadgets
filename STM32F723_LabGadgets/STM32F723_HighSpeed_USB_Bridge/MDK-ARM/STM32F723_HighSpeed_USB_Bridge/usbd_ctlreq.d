@@ -35,7 +35,6 @@ stm32f723_highspeed_usb_bridge\usbd_ctlreq.o: ../Drivers/STM32F7xx_HAL_Driver/In
 stm32f723_highspeed_usb_bridge\usbd_ctlreq.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_i2c_ex.h
 stm32f723_highspeed_usb_bridge\usbd_ctlreq.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pwr.h
 stm32f723_highspeed_usb_bridge\usbd_ctlreq.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pwr_ex.h
-stm32f723_highspeed_usb_bridge\usbd_ctlreq.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_sai.h
 stm32f723_highspeed_usb_bridge\usbd_ctlreq.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h
 stm32f723_highspeed_usb_bridge\usbd_ctlreq.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h
 stm32f723_highspeed_usb_bridge\usbd_ctlreq.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h

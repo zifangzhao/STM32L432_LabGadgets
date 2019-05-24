@@ -134,12 +134,10 @@ void Error_Handler(void);
 #define PMOD_GPIO_0_GPIO_Port GPIOG
 #define SAI2_SD_B_Pin GPIO_PIN_10
 #define SAI2_SD_B_GPIO_Port GPIOG
-#define WIFI_GPIO_2_Pin GPIO_PIN_6
-#define WIFI_GPIO_2_GPIO_Port GPIOD
+#define ARD_D0_USART2_RX_Pin GPIO_PIN_6
+#define ARD_D0_USART2_RX_GPIO_Port GPIOD
 #define LCD_PSRAM_D2_Pin GPIO_PIN_0
 #define LCD_PSRAM_D2_GPIO_Port GPIOD
-#define STMOD_UART4_RXD_s_Pin GPIO_PIN_11
-#define STMOD_UART4_RXD_s_GPIO_Port GPIOC
 #define QSPI_D1_Pin GPIO_PIN_10
 #define QSPI_D1_GPIO_Port GPIOC
 #define SAI2_FS_A_Pin GPIO_PIN_7
@@ -178,8 +176,6 @@ void Error_Handler(void);
 #define PSRAM_A0_GPIO_Port GPIOF
 #define STMOD_UART4_TXD_Pin GPIO_PIN_13
 #define STMOD_UART4_TXD_GPIO_Port GPIOH
-#define STMOD_UART4_RXD_Pin GPIO_PIN_14
-#define STMOD_UART4_RXD_GPIO_Port GPIOH
 #define PMOD_SPI2_NSS_Pin GPIO_PIN_0
 #define PMOD_SPI2_NSS_GPIO_Port GPIOI
 #define PMOD_GPIO_1_Pin GPIO_PIN_2
@@ -308,10 +304,6 @@ void Error_Handler(void);
 #define USB_OTG_HS_VBUS_GPIO_Port GPIOB
 #define LCD_PSRAM_D14_Pin GPIO_PIN_9
 #define LCD_PSRAM_D14_GPIO_Port GPIOD
-#define LCD_PSRAM_D13_Pin GPIO_PIN_8
-#define LCD_PSRAM_D13_GPIO_Port GPIOD
-#define ARD_D0_USART2_RX_Pin GPIO_PIN_3
-#define ARD_D0_USART2_RX_GPIO_Port GPIOA
 #define SYS_LD_USER1_Pin GPIO_PIN_7
 #define SYS_LD_USER1_GPIO_Port GPIOA
 #define SYS_LD_USER2_Pin GPIO_PIN_1
@@ -332,8 +324,6 @@ void Error_Handler(void);
 #define LCD_PSRAM_D12_GPIO_Port GPIOE
 #define USB_OTGFS_OVCR_INT_Pin GPIO_PIN_10
 #define USB_OTGFS_OVCR_INT_GPIO_Port GPIOB
-#define PMOD_INT_Pin GPIO_PIN_11
-#define PMOD_INT_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

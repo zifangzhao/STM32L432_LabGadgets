@@ -62,13 +62,22 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
-extern uint8_t data_buf_RX[BUF_SIZE];		// This records @ 20kHz x 32CH
+extern uint8_t data_buf_RX1[BUF_SIZE];		// This records @ 20kHz x 32CH
+extern uint8_t data_buf_RX2[BUF_SIZE];		// This records @ 20kHz x 32CH
+extern uint8_t data_buf_RX3[BUF_SIZE];		// This records @ 20kHz x 32CH
+extern uint8_t data_buf_RX4[BUF_SIZE];		// This records @ 20kHz x 32CH
 extern uint8_t data_buf_TX[BUF_SIZE];		// This records @ 20kHz x 32CH
 
-extern dataMGR MGR_RX;
+extern dataMGR MGR_RX1;
+extern dataMGR MGR_RX2;
+extern dataMGR MGR_RX3;
+extern dataMGR MGR_RX4;
 extern dataMGR MGR_TX;
 
-extern struct CE32_IONCOM_Handle IC_handle;
+extern struct CE32_IONCOM_Handle IC_handle1;
+extern struct CE32_IONCOM_Handle IC_handle2;
+extern struct CE32_IONCOM_Handle IC_handle3;
+extern struct CE32_IONCOM_Handle IC_handle4;
 
 /* USER CODE END PV */
 
@@ -84,14 +93,11 @@ extern struct CE32_IONCOM_Handle IC_handle;
 
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
-extern DMA_HandleTypeDef hdma_sai2_a;
-extern DMA_HandleTypeDef hdma_sai2_b;
+extern DMA_HandleTypeDef hdma_uart4_rx;
 extern DMA_HandleTypeDef hdma_uart7_rx;
-extern DMA_HandleTypeDef hdma_uart7_tx;
-extern DMA_HandleTypeDef hdma_usart6_rx;
-extern DMA_HandleTypeDef hdma_usart6_tx;
+extern DMA_HandleTypeDef hdma_usart2_rx;
+extern DMA_HandleTypeDef hdma_usart3_rx;
 extern UART_HandleTypeDef huart7;
-extern UART_HandleTypeDef huart6;
 extern TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN EV */
@@ -240,12 +246,50 @@ void SysTick_Handler(void)
 void DMA1_Stream1_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
-
+	//USART3_RX
+	DMA_Base_Registers *regs = (DMA_Base_Registers *)  hdma_usart3_rx.StreamBaseAddress;
+	regs->IFCR = DMA_FLAG_TCIF0_4 << hdma_usart3_rx.StreamIndex;
+	regs->IFCR = DMA_FLAG_HTIF0_4<< hdma_usart3_rx.StreamIndex;
+	dataMGR_enQueue_Nbytes(&IC_handle2.RX_MGR,IC_handle2.DMA_TransSize);
+	UART_IONCOM_Bank_EnqueueBank(&IC_handle2);
+	if((IC_handle2.huart->hdmarx->Instance->CR&DMA_SxCR_CT)!=0) //Check which buffer is being used currently
+	{
+		IC_handle2.huart->hdmarx->Instance->M0AR = (uint32_t)IC_handle2.RX_MGR.dataPtr + IC_handle2.DMA_bank_in*(IC_handle2.DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
+	}
+	else
+	{
+		IC_handle2.huart->hdmarx->Instance->M1AR = (uint32_t)IC_handle2.RX_MGR.dataPtr + IC_handle2.DMA_bank_in*(IC_handle2.DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
+	}
   /* USER CODE END DMA1_Stream1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_uart7_tx);
   /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
 
   /* USER CODE END DMA1_Stream1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA1 stream2 global interrupt.
+  */
+void DMA1_Stream2_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream2_IRQn 0 */
+	//UART4
+	DMA_Base_Registers *regs = (DMA_Base_Registers *)  hdma_uart4_rx.StreamBaseAddress;
+	regs->IFCR = DMA_FLAG_TCIF0_4 << hdma_uart4_rx.StreamIndex;
+	regs->IFCR = DMA_FLAG_HTIF0_4<< hdma_uart4_rx.StreamIndex;
+	dataMGR_enQueue_Nbytes(&IC_handle3.RX_MGR,IC_handle3.DMA_TransSize);
+	UART_IONCOM_Bank_EnqueueBank(&IC_handle3);
+	if((IC_handle3.huart->hdmarx->Instance->CR&DMA_SxCR_CT)!=0) //Check which buffer is being used currently
+	{
+		IC_handle3.huart->hdmarx->Instance->M0AR = (uint32_t)IC_handle3.RX_MGR.dataPtr + IC_handle3.DMA_bank_in*(IC_handle3.DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
+	}
+	else
+	{
+		IC_handle3.huart->hdmarx->Instance->M1AR = (uint32_t)IC_handle3.RX_MGR.dataPtr + IC_handle3.DMA_bank_in*(IC_handle3.DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
+	}
+  /* USER CODE END DMA1_Stream2_IRQn 0 */
+  /* USER CODE BEGIN DMA1_Stream2_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream2_IRQn 1 */
 }
 
 /**
@@ -254,33 +298,50 @@ void DMA1_Stream1_IRQHandler(void)
 void DMA1_Stream3_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Stream3_IRQn 0 */
-	//DMA1_Stream2->CR &=  ~DMA_IT_TC;
-	//__HAL_SPI_DISABLE(&hspi1);
-	
-	//MGR.state=hspi1.Instance->DR;			//Retrive last data stored in DR to avoid future data corruption
+	//USART3_RX
  	DMA_Base_Registers *regs = (DMA_Base_Registers *)  hdma_uart7_rx.StreamBaseAddress;
 	regs->IFCR = DMA_FLAG_TCIF0_4 << hdma_uart7_rx.StreamIndex;
-	//regs->IFCR = DMA_FLAG_TEIF0_4 << hdma_uart7_tx.StreamIndex;
 	regs->IFCR = DMA_FLAG_HTIF0_4<< hdma_uart7_rx.StreamIndex;
-	//regs->IFCR = DMA_FLAG_FEIF0_4 << hdma_uart7_tx.StreamIndex;
-	
-  /* USER CODE END DMA1_Stream3_IRQn 0 */
-  //HAL_DMA_IRQHandler(&hdma_uart7_rx);
-  /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
-
-	dataMGR_enQueue_Nbytes(&IC_handle.RX_MGR,IC_handle.DMA_TransSize);
-	UART_IONCOM_Bank_EnqueueBank(&IC_handle);
-	if((IC_handle.huart->hdmarx->Instance->CR&DMA_SxCR_CT)!=0) //Check which buffer is being used currently
+	dataMGR_enQueue_Nbytes(&IC_handle1.RX_MGR,IC_handle1.DMA_TransSize);
+	UART_IONCOM_Bank_EnqueueBank(&IC_handle1);
+	if((IC_handle1.huart->hdmarx->Instance->CR&DMA_SxCR_CT)!=0) //Check which buffer is being used currently
 	{
-		IC_handle.huart->hdmarx->Instance->M0AR = (uint32_t)IC_handle.RX_MGR.dataPtr + IC_handle.DMA_bank_in*(IC_handle.DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
+		IC_handle1.huart->hdmarx->Instance->M0AR = (uint32_t)IC_handle1.RX_MGR.dataPtr + IC_handle1.DMA_bank_in*(IC_handle1.DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
 	}
 	else
 	{
-		IC_handle.huart->hdmarx->Instance->M1AR = (uint32_t)IC_handle.RX_MGR.dataPtr + IC_handle.DMA_bank_in*(IC_handle.DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
+		IC_handle1.huart->hdmarx->Instance->M1AR = (uint32_t)IC_handle1.RX_MGR.dataPtr + IC_handle1.DMA_bank_in*(IC_handle1.DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
 	}
-	//DMA1_Stream2->CR =  DMA_IT_TC;
+  /* USER CODE END DMA1_Stream3_IRQn 0 */
+  /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
 	
   /* USER CODE END DMA1_Stream3_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA1 stream5 global interrupt.
+  */
+void DMA1_Stream5_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
+	//UsART2
+	DMA_Base_Registers *regs = (DMA_Base_Registers *)  hdma_usart2_rx.StreamBaseAddress;
+	regs->IFCR = DMA_FLAG_TCIF0_4 << hdma_usart2_rx.StreamIndex;
+	regs->IFCR = DMA_FLAG_HTIF0_4<< hdma_usart2_rx.StreamIndex;
+	dataMGR_enQueue_Nbytes(&IC_handle4.RX_MGR,IC_handle4.DMA_TransSize);
+	UART_IONCOM_Bank_EnqueueBank(&IC_handle4);
+	if((IC_handle4.huart->hdmarx->Instance->CR&DMA_SxCR_CT)!=0) //Check which buffer is being used currently
+	{
+		IC_handle4.huart->hdmarx->Instance->M0AR = (uint32_t)IC_handle4.RX_MGR.dataPtr + IC_handle4.DMA_bank_in*(IC_handle4.DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
+	}
+	else
+	{
+		IC_handle4.huart->hdmarx->Instance->M1AR = (uint32_t)IC_handle4.RX_MGR.dataPtr + IC_handle4.DMA_bank_in*(IC_handle4.DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
+	}
+  /* USER CODE END DMA1_Stream5_IRQn 0 */
+  /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream5_IRQn 1 */
 }
 
 /**
@@ -295,112 +356,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
 
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA2 stream1 global interrupt.
-  */
-void DMA2_Stream1_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA2_Stream1_IRQn 0 */
-
-  /* USER CODE END DMA2_Stream1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart6_rx);
-  /* USER CODE BEGIN DMA2_Stream1_IRQn 1 */
-
-  /* USER CODE END DMA2_Stream1_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA2 stream4 global interrupt.
-  */
-void DMA2_Stream4_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA2_Stream4_IRQn 0 */
-
-  /* USER CODE END DMA2_Stream4_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_sai2_a);
-  /* USER CODE BEGIN DMA2_Stream4_IRQn 1 */
-
-  /* USER CODE END DMA2_Stream4_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA2 stream6 global interrupt.
-  */
-void DMA2_Stream6_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA2_Stream6_IRQn 0 */
-
-  /* USER CODE END DMA2_Stream6_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_sai2_b);
-  /* USER CODE BEGIN DMA2_Stream6_IRQn 1 */
-
-  /* USER CODE END DMA2_Stream6_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA2 stream7 global interrupt.
-  */
-void DMA2_Stream7_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA2_Stream7_IRQn 0 */
-	DMA2_Stream7->CR &=  ~DMA_SxCR_EN;
-	//__HAL_SPI_DISABLE(&hspi1);
-	
-	//MGR.state=hspi1.Instance->DR;			//Retrive last data stored in DR to avoid future data corruption
- 	DMA_Base_Registers *regs = (DMA_Base_Registers *)  hdma_usart6_tx.StreamBaseAddress;
-	regs->IFCR = DMA_FLAG_TCIF0_4 << hdma_usart6_tx.StreamIndex;
-	//regs->IFCR = DMA_FLAG_TEIF0_4 << hdma_usart6_tx.StreamIndex;
-	regs->IFCR = DMA_FLAG_HTIF0_4 << hdma_usart6_tx.StreamIndex;
-	//regs->IFCR = DMA_FLAG_FEIF0_4 << hdma_usart6_tx.StreamIndex;
-  /* USER CODE END DMA2_Stream2_IRQn 0 */
-  //HAL_DMA_IRQHandler(&hdma_spi1_tx);
-  /* USER CODE BEGIN DMA2_Stream2_IRQn 1 */
-	CLEAR_BIT(USART6->CR3, USART_CR3_DMAT); //DISABLE UART_DMA_request
-	//DMA_DISABLE(HJ_DMA_TX);
-	MGR_TX.logState&=~MGR_STATE_TRANSBUSY;
-  /* USER CODE END DMA2_Stream7_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart6_tx);
-  /* USER CODE BEGIN DMA2_Stream7_IRQn 1 */
-
-  /* USER CODE END DMA2_Stream7_IRQn 1 */
-}
-
-/**
-  * @brief This function handles USART6 global interrupt.
-  */
-void USART6_IRQHandler(void)
-{
-  /* USER CODE BEGIN USART6_IRQn 0 */
-	uint32_t isrflags   = READ_REG(huart6.Instance->ISR); //read ISR flag
-	if((isrflags&(uint32_t)(USART_ISR_RXNE))!=0)
-	{
-		char data=huart6.Instance->RDR&0xff; //read data
-		dataMGR_enQueue_byte(&MGR_RX,data);
-	}
-	//TX ISR
-	if((huart6.Instance->CR1&USART_CR1_TXEIE)!=0)
-	{		
-		if((isrflags&(uint32_t)(USART_ISR_TXE))!=0)
-		{
-			if(MGR_TX.bufferUsed[0]>0)
-			{
-				USART6->TDR=dataMGR_deQueue_byte(&MGR_TX,0);
-			}
-			else
-			{
-				MGR_TX.logState&=~MGR_STATE_TRANSBUSY;
-				CLEAR_BIT(huart6.Instance->CR1, USART_CR1_TXEIE); //clear TXE interrupt if buffer is empty
-			}
-		}
-	}
-  /* USER CODE END USART6_IRQn 0 */
-  HAL_UART_IRQHandler(&huart6);
-  /* USER CODE BEGIN USART6_IRQn 1 */
-	//Clear interrupt
-	USART6->ICR=USART_ICR_ORECF;
-  /* USER CODE END USART6_IRQn 1 */
 }
 
 /**
@@ -427,7 +382,7 @@ void UART7_IRQHandler(void)
 	if((isrflags&(uint32_t)(USART_ISR_RXNE))!=0)
 	{
 		char data=huart7.Instance->RDR&0xff; //read data
-		dataMGR_enQueue_byte(&MGR_RX,data);
+		dataMGR_enQueue_byte(&MGR_RX1,data);
 	}
 	//TX ISR
 	if((huart7.Instance->CR1&USART_CR1_TXEIE)!=0)
@@ -446,7 +401,6 @@ void UART7_IRQHandler(void)
 		}
 	}
   /* USER CODE END UART7_IRQn 0 */
-  HAL_UART_IRQHandler(&huart7);
   /* USER CODE BEGIN UART7_IRQn 1 */
 	UART7->ICR=USART_ICR_ORECF;
   /* USER CODE END UART7_IRQn 1 */

@@ -92,13 +92,6 @@ __forceinline void UART_IONCOM_Bank_Reset(struct CE32_IONCOM_Handle *handle)
 	handle->DMA_bank_out=0;
 }
 
-__forceinline void UART_IONCOM_Bank_Reset_DBM(struct CE32_IONCOM_Handle *handle) //Double buffer mode
-{
-	handle->DMA_bank_in=1;
-	handle->DMA_BankPend=0;
-	handle->DMA_bank_out=0;
-}
-
 __forceinline void UART_IONCOM_Bank_EnqueueBank(struct CE32_IONCOM_Handle *handle)
 {
 	handle->DMA_bank_in++;
@@ -108,6 +101,20 @@ __forceinline void UART_IONCOM_Bank_EnqueueBank(struct CE32_IONCOM_Handle *handl
 		handle->DMA_bank_in=0;
 	}
 }
+
+__forceinline void UART_IONCOM_Bank_Reset_DBM(struct CE32_IONCOM_Handle *handle) //Double buffer mode
+{
+	handle->huart->hdmarx->Instance->CR&=~DMA_SxCR_CT;
+	handle->huart->hdmarx->Instance->M0AR = (uint32_t)handle->RX_MGR.dataPtr + handle->DMA_bank_in*(handle->DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
+	UART_IONCOM_Bank_EnqueueBank(handle);
+	handle->huart->hdmarx->Instance->M1AR = (uint32_t)handle->RX_MGR.dataPtr + handle->DMA_bank_in*(handle->DMA_TransSize); //Set the DMA to be in circular mode and automatic filling the buffer
+
+	//handle->DMA_bank_in=1;
+	handle->DMA_BankPend=0;
+	handle->DMA_bank_out=0;
+}
+
+
 
 __forceinline uint16_t UART_IONCOM_Bank_DequeueBank(struct CE32_IONCOM_Handle *handle)
 {

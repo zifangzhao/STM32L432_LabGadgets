@@ -57,6 +57,8 @@
 #include "dataMGR.h"
 #include "CE32_ioncom.h"
 #include "usbd_cdc_if.h"
+
+#define CDC_BUF_SIZE 0x2000
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -76,33 +78,32 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-SAI_HandleTypeDef hsai_BlockA2;
-SAI_HandleTypeDef hsai_BlockB2;
-DMA_HandleTypeDef hdma_sai2_a;
-DMA_HandleTypeDef hdma_sai2_b;
-
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim9;
 TIM_HandleTypeDef htim12;
 
-UART_HandleTypeDef huart5;
+UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart7;
-UART_HandleTypeDef huart6;
+UART_HandleTypeDef huart2;
+UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_uart4_rx;
 DMA_HandleTypeDef hdma_uart7_rx;
-DMA_HandleTypeDef hdma_uart7_tx;
-DMA_HandleTypeDef hdma_usart6_rx;
-DMA_HandleTypeDef hdma_usart6_tx;
+DMA_HandleTypeDef hdma_usart2_rx;
+DMA_HandleTypeDef hdma_usart3_rx;
 
 /* USER CODE BEGIN PV */
 int Bytes;
 int Nfail;
 int retries;
 int WaitCyc;
-uint8_t data_buf_RX[BUF_SIZE];		// This records @ 20kHz x 32CH
+uint8_t data_buf_RX1[BUF_SIZE];		// This records @ 20kHz x 32CH
+uint8_t data_buf_RX2[BUF_SIZE];		// This records @ 20kHz x 32CH
+uint8_t data_buf_RX3[BUF_SIZE];		// This records @ 20kHz x 32CH
+uint8_t data_buf_RX4[BUF_SIZE];		// This records @ 20kHz x 32CH
 uint8_t data_buf_TX[BUF_SIZE];		// This records @ 20kHz x 32CH
-uint8_t data_buf_RX_CDC[BUF_SIZE];
+uint8_t data_buf_RX_CDC[CDC_BUF_SIZE];
 uint16_t misc_DigiSig;
 uint8_t rec_cnt;
 uint32_t log_cnt;
@@ -112,7 +113,10 @@ uint32_t logIdx;	//Index of log in the CE32_systemLog struct
 uint32_t filePTR;	//recording pointer location (in 512B unit,real filelen=512*x)
 uint32_t updHeader;
 dataMGR MGR_TX;
-dataMGR MGR_RX;
+dataMGR MGR_RX1;
+dataMGR MGR_RX2;
+dataMGR MGR_RX3;
+dataMGR MGR_RX4;
 dataMGR MGR_CDC;
 dataMGR MGR_prev;
 dataMGR MGR_misc;
@@ -124,7 +128,10 @@ int freq;
 
 const uint16_t RX_size=1000;
 
-struct CE32_IONCOM_Handle IC_handle;
+struct CE32_IONCOM_Handle IC_handle1;
+struct CE32_IONCOM_Handle IC_handle2;
+struct CE32_IONCOM_Handle IC_handle3;
+struct CE32_IONCOM_Handle IC_handle4;
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 /* USER CODE END PV */
@@ -133,15 +140,15 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_SAI2_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM9_Init(void);
 static void MX_TIM12_Init(void);
-static void MX_USART6_UART_Init(void);
-static void MX_UART5_Init(void);
 static void MX_UART7_Init(void);
+static void MX_UART4_Init(void);
+static void MX_USART2_UART_Init(void);
+static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -187,35 +194,72 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_SAI2_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM5_Init();
   MX_TIM9_Init();
   MX_TIM12_Init();
-  MX_USART6_UART_Init();
-  
-  MX_UART5_Init();
+  //MX_USB_DEVICE_Init();
   MX_UART7_Init();
+  MX_UART4_Init();
+  MX_USART2_UART_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 	dataMGR_init(&MGR_TX,(char*) data_buf_TX,sizeof(data_buf_TX));					//FIFO setup 
-	dataMGR_init(&MGR_RX,(char*) data_buf_RX,sizeof(data_buf_RX));					//RX FIFO setup 
+	dataMGR_init(&MGR_RX1,(char*) data_buf_RX1,sizeof(data_buf_RX1));					//RX FIFO setup 
+	dataMGR_init(&MGR_RX2,(char*) data_buf_RX2,sizeof(data_buf_RX2));					//RX FIFO setup 
+	dataMGR_init(&MGR_RX3,(char*) data_buf_RX3,sizeof(data_buf_RX3));					//RX FIFO setup 
+	dataMGR_init(&MGR_RX4,(char*) data_buf_RX4,sizeof(data_buf_RX4));					//RX FIFO setup 
 	dataMGR_init(&MGR_CDC,(char*) data_buf_RX_CDC,sizeof(data_buf_RX_CDC));					//RX FIFO setup 
 	
-	IC_handle.DMA_TotalBanks=16;
-	IC_handle.DMA_TransSize=BUF_SIZE/IC_handle.DMA_TotalBanks;
-	IC_handle.huart=&huart7;
-	IC_handle.IRQn=UART7_IRQn;
-	IC_handle.huart->hdmatx->Instance=DMA1_Stream1;
-	IC_handle.huart->hdmarx->Instance=DMA1_Stream3;
-	IC_handle.config|=(IONCOM_CONFIG_RXDMA|IONCOM_CONFIG_TXDMA);
-	CE32_Ioncom_Init(&IC_handle,(char*)data_buf_RX,sizeof(data_buf_RX),(char*)data_buf_TX,(uint16_t)sizeof(data_buf_TX));
-	UART_IONCOM_DMA_Init(&IC_handle);
-	UART_DISABLE(IC_handle.huart->Instance);					//Disable UART temporarly to avoid interferece with initialization
+	IC_handle1.DMA_TotalBanks=4;
+	IC_handle1.DMA_TransSize=BUF_SIZE/IC_handle1.DMA_TotalBanks;
+	IC_handle1.huart=&huart7;
+	IC_handle1.IRQn=UART7_IRQn;
+	IC_handle1.huart->hdmarx->Instance=DMA1_Stream3;
+	IC_handle1.config|=(IONCOM_CONFIG_RXDMA);
+	CE32_Ioncom_Init(&IC_handle1,(char*)data_buf_RX1,sizeof(data_buf_RX1),(char*)data_buf_TX,(uint16_t)sizeof(data_buf_TX));
+	UART_IONCOM_DMA_Init(&IC_handle1);
+	UART_DISABLE(IC_handle1.huart->Instance);					//Disable UART temporarly to avoid interferece with initialization
+	IC_handle1.huart->hdmarx->Instance->M0AR = (uint32_t)IC_handle1.RX_MGR.dataPtr; //Set the DMA to be in circular mode and automatic filling the buffer
+	IC_handle1.huart->hdmarx->Instance->NDTR = IC_handle1.RX_MGR.dataSize;
 	
-	IC_handle.huart->hdmarx->Instance->M0AR = (uint32_t)IC_handle.RX_MGR.dataPtr; //Set the DMA to be in circular mode and automatic filling the buffer
-	IC_handle.huart->hdmarx->Instance->NDTR = IC_handle.RX_MGR.dataSize;
 	
+	IC_handle2.DMA_TotalBanks=4;
+	IC_handle2.DMA_TransSize=BUF_SIZE/IC_handle2.DMA_TotalBanks;
+	IC_handle2.huart=&huart3;
+	IC_handle2.IRQn=USART3_IRQn;
+	IC_handle2.huart->hdmarx->Instance=DMA1_Stream1;
+	IC_handle2.config|=(IONCOM_CONFIG_RXDMA);
+	CE32_Ioncom_Init(&IC_handle2,(char*)data_buf_RX2,sizeof(data_buf_RX2),(char*)data_buf_TX,(uint16_t)sizeof(data_buf_TX));
+	UART_IONCOM_DMA_Init(&IC_handle2);
+	UART_DISABLE(IC_handle2.huart->Instance);					//Disable UART temporarly to avoid interferece with initialization
+	IC_handle2.huart->hdmarx->Instance->M0AR = (uint32_t)IC_handle2.RX_MGR.dataPtr; //Set the DMA to be in circular mode and automatic filling the buffer
+	IC_handle2.huart->hdmarx->Instance->NDTR = IC_handle2.RX_MGR.dataSize;
+	
+	IC_handle3.DMA_TotalBanks=4;
+	IC_handle3.DMA_TransSize=BUF_SIZE/IC_handle3.DMA_TotalBanks;
+	IC_handle3.huart=&huart4;
+	IC_handle3.IRQn=UART4_IRQn;
+	IC_handle3.huart->hdmarx->Instance=DMA1_Stream2;
+	IC_handle3.config|=(IONCOM_CONFIG_RXDMA);
+	CE32_Ioncom_Init(&IC_handle3,(char*)data_buf_RX3,sizeof(data_buf_RX3),(char*)data_buf_TX,(uint16_t)sizeof(data_buf_TX));
+	UART_IONCOM_DMA_Init(&IC_handle3);
+	UART_DISABLE(IC_handle3.huart->Instance);					//Disable UART temporarly to avoid interferece with initialization
+	IC_handle3.huart->hdmarx->Instance->M0AR = (uint32_t)IC_handle3.RX_MGR.dataPtr; //Set the DMA to be in circular mode and automatic filling the buffer
+	IC_handle3.huart->hdmarx->Instance->NDTR = IC_handle3.RX_MGR.dataSize;
+	
+	IC_handle4.DMA_TotalBanks=4;
+	IC_handle4.DMA_TransSize=BUF_SIZE/IC_handle4.DMA_TotalBanks;
+	IC_handle4.huart=&huart2;
+	IC_handle4.IRQn=USART2_IRQn;
+	IC_handle4.huart->hdmarx->Instance=DMA1_Stream5;
+	IC_handle4.config|=(IONCOM_CONFIG_RXDMA);
+	CE32_Ioncom_Init(&IC_handle4,(char*)data_buf_RX4,sizeof(data_buf_RX4),(char*)data_buf_TX,(uint16_t)sizeof(data_buf_TX));
+	UART_IONCOM_DMA_Init(&IC_handle4);
+	UART_DISABLE(IC_handle4.huart->Instance);					//Disable UART temporarly to avoid interferece with initialization
+	IC_handle4.huart->hdmarx->Instance->M0AR = (uint32_t)IC_handle4.RX_MGR.dataPtr; //Set the DMA to be in circular mode and automatic filling the buffer
+	IC_handle4.huart->hdmarx->Instance->NDTR = IC_handle4.RX_MGR.dataSize;
 	//UART7->CR1|=USART_CR1_RXNEIE;  //Enable RX interrput to receive commands
 
 	MX_USB_DEVICE_Init();
@@ -230,36 +274,128 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 		//DIrect mode
-		while(IC_handle.RX_MGR.bufferUsed[0]>=148)
+		if(IC_handle1.RX_MGR.bufferUsed[0]>=148)
 		{
-			if((uint8_t)dataMGR_deQueue_byte(&IC_handle.RX_MGR,0)==0x66)
+			if((uint8_t)dataMGR_deQueue_byte(&IC_handle1.RX_MGR,0)==0x66)
 			{
-				if((uint8_t)dataMGR_deQueue_byte(&IC_handle.RX_MGR,0)==0x55)
+				if((uint8_t)dataMGR_deQueue_byte(&IC_handle1.RX_MGR,0)==0x55)
 				{
-					if((uint8_t)dataMGR_deQueue_byte(&IC_handle.RX_MGR,0)==0x5d)
+					if((uint8_t)dataMGR_deQueue_byte(&IC_handle1.RX_MGR,0)==0x5d)
 					{
-						if((uint8_t)dataMGR_deQueue_byte(&IC_handle.RX_MGR,0)==0xd5)
+						if((uint8_t)dataMGR_deQueue_byte(&IC_handle1.RX_MGR,0)==0xd5)
 						{
 							dataMGR_enQueue_byte(&MGR_CDC,0x66);
 							dataMGR_enQueue_byte(&MGR_CDC,0x55);
 							dataMGR_enQueue_byte(&MGR_CDC,0x5d);
-							dataMGR_enQueue_byte(&MGR_CDC,0xd5);
+							dataMGR_enQueue_byte(&MGR_CDC,0x00);
 							for(int i=0;i<144;i++)
 							{
-								while(IC_handle.RX_MGR.bufferUsed[0]<=0)
+								while(IC_handle1.RX_MGR.bufferUsed[0]<=0)
 								{
 								}
-								dataMGR_enQueue_byte(&MGR_CDC,(uint8_t)dataMGR_deQueue_byte(&IC_handle.RX_MGR,0));
+								//dataMGR_enQueue_byte(&MGR_CDC,0xAA);
+								uint8_t temp=(uint8_t)dataMGR_deQueue_byte(&IC_handle1.RX_MGR,0);
+//								if(temp==0)
+//								{
+//									__nop();
+//								}
+								dataMGR_enQueue_byte(&MGR_CDC,temp);
 							}
-							break;
+							//break;
 						}
 					}
 				}
 			}
 		}
-		if(MGR_CDC.bufferUsed[0]>=IC_handle.DMA_TransSize && ((IC_handle.huart->Instance->CR1&USART_CR1_UE)!=0))
+
+		if(IC_handle2.RX_MGR.bufferUsed[0]>=148)
 		{
-			int ByteToSend=IC_handle.DMA_TransSize;
+			if((uint8_t)dataMGR_deQueue_byte(&IC_handle2.RX_MGR,0)==0x66)
+			{
+				if((uint8_t)dataMGR_deQueue_byte(&IC_handle2.RX_MGR,0)==0x55)
+				{
+					if((uint8_t)dataMGR_deQueue_byte(&IC_handle2.RX_MGR,0)==0x5d)
+					{
+						if((uint8_t)dataMGR_deQueue_byte(&IC_handle2.RX_MGR,0)==0xd5)
+						{
+							dataMGR_enQueue_byte(&MGR_CDC,0x66);
+							dataMGR_enQueue_byte(&MGR_CDC,0x55);
+							dataMGR_enQueue_byte(&MGR_CDC,0x5d);
+							dataMGR_enQueue_byte(&MGR_CDC,0x01);
+							for(int i=0;i<144;i++)
+							{
+								while(IC_handle2.RX_MGR.bufferUsed[0]<=0)
+								{
+								}
+								dataMGR_enQueue_byte(&MGR_CDC,(uint8_t)dataMGR_deQueue_byte(&IC_handle2.RX_MGR,0));
+							}
+							//break;
+						}
+					}
+				}
+			}
+		}
+
+		
+		if(IC_handle3.RX_MGR.bufferUsed[0]>=148)
+		{
+			if((uint8_t)dataMGR_deQueue_byte(&IC_handle3.RX_MGR,0)==0x66)
+			{
+				if((uint8_t)dataMGR_deQueue_byte(&IC_handle3.RX_MGR,0)==0x55)
+				{
+					if((uint8_t)dataMGR_deQueue_byte(&IC_handle3.RX_MGR,0)==0x5d)
+					{
+						if((uint8_t)dataMGR_deQueue_byte(&IC_handle3.RX_MGR,0)==0xd5)
+						{
+							dataMGR_enQueue_byte(&MGR_CDC,0x66);
+							dataMGR_enQueue_byte(&MGR_CDC,0x55);
+							dataMGR_enQueue_byte(&MGR_CDC,0x5d);
+							dataMGR_enQueue_byte(&MGR_CDC,0x02);
+							for(int i=0;i<144;i++)
+							{
+								while(IC_handle3.RX_MGR.bufferUsed[0]<=0)
+								{
+								}
+								dataMGR_enQueue_byte(&MGR_CDC,(uint8_t)dataMGR_deQueue_byte(&IC_handle3.RX_MGR,0));
+							}
+							//break;
+						}
+					}
+				}
+			}
+		}
+
+		if(IC_handle4.RX_MGR.bufferUsed[0]>=148)
+		{
+			if((uint8_t)dataMGR_deQueue_byte(&IC_handle4.RX_MGR,0)==0x66)
+			{
+				if((uint8_t)dataMGR_deQueue_byte(&IC_handle4.RX_MGR,0)==0x55)
+				{
+					if((uint8_t)dataMGR_deQueue_byte(&IC_handle4.RX_MGR,0)==0x5d)
+					{
+						if((uint8_t)dataMGR_deQueue_byte(&IC_handle4.RX_MGR,0)==0xd5)
+						{
+							dataMGR_enQueue_byte(&MGR_CDC,0x66);
+							dataMGR_enQueue_byte(&MGR_CDC,0x55);
+							dataMGR_enQueue_byte(&MGR_CDC,0x5d);
+							dataMGR_enQueue_byte(&MGR_CDC,0x03);
+							for(int i=0;i<144;i++)
+							{
+								while(IC_handle4.RX_MGR.bufferUsed[0]<=0)
+								{
+								}
+								dataMGR_enQueue_byte(&MGR_CDC,(uint8_t)dataMGR_deQueue_byte(&IC_handle4.RX_MGR,0));
+							}
+							//break;
+						}
+					}
+				}
+			}
+		}
+		
+		if(MGR_CDC.bufferUsed[0]>=CDC_BUF_SIZE/4)
+		{
+			int ByteToSend=CDC_BUF_SIZE/4;
 			if(CDC_Transmit_HS((uint8_t*)(data_buf_RX_CDC+MGR_CDC.outPTR[0]),ByteToSend)==USBD_OK)
 			{
 				dataMGR_deQueue(&MGR_CDC,ByteToSend,0);
@@ -319,97 +455,18 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART6|RCC_PERIPHCLK_UART5
-                              |RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_SAI2
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_USART3
+                              |RCC_PERIPHCLK_UART4|RCC_PERIPHCLK_UART7
                               |RCC_PERIPHCLK_CLK48;
-  PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
-  PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
-  PeriphClkInitStruct.PLLSAI.PLLSAIP = RCC_PLLSAIP_DIV2;
-  PeriphClkInitStruct.PLLSAIDivQ = 1;
-  PeriphClkInitStruct.Sai2ClockSelection = RCC_SAI2CLKSOURCE_PLLSAI;
-  PeriphClkInitStruct.Uart5ClockSelection = RCC_UART5CLKSOURCE_SYSCLK;
-  PeriphClkInitStruct.Usart6ClockSelection = RCC_USART6CLKSOURCE_SYSCLK;
+  PeriphClkInitStruct.Usart2ClockSelection = RCC_USART2CLKSOURCE_SYSCLK;
+  PeriphClkInitStruct.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
+  PeriphClkInitStruct.Uart4ClockSelection = RCC_UART4CLKSOURCE_SYSCLK;
   PeriphClkInitStruct.Uart7ClockSelection = RCC_UART7CLKSOURCE_SYSCLK;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief SAI2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_SAI2_Init(void)
-{
-
-  /* USER CODE BEGIN SAI2_Init 0 */
-
-  /* USER CODE END SAI2_Init 0 */
-
-  /* USER CODE BEGIN SAI2_Init 1 */
-
-  /* USER CODE END SAI2_Init 1 */
-  hsai_BlockA2.Instance = SAI2_Block_A;
-  hsai_BlockA2.Init.Protocol = SAI_FREE_PROTOCOL;
-  hsai_BlockA2.Init.AudioMode = SAI_MODEMASTER_TX;
-  hsai_BlockA2.Init.DataSize = SAI_DATASIZE_16;
-  hsai_BlockA2.Init.FirstBit = SAI_FIRSTBIT_MSB;
-  hsai_BlockA2.Init.ClockStrobing = SAI_CLOCKSTROBING_FALLINGEDGE;
-  hsai_BlockA2.Init.Synchro = SAI_ASYNCHRONOUS;
-  hsai_BlockA2.Init.OutputDrive = SAI_OUTPUTDRIVE_ENABLE;
-  hsai_BlockA2.Init.NoDivider = SAI_MASTERDIVIDER_ENABLE;
-  hsai_BlockA2.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_1QF;
-  hsai_BlockA2.Init.AudioFrequency = SAI_AUDIO_FREQUENCY_44K;
-  hsai_BlockA2.Init.SynchroExt = SAI_SYNCEXT_DISABLE;
-  hsai_BlockA2.Init.MonoStereoMode = SAI_STEREOMODE;
-  hsai_BlockA2.Init.CompandingMode = SAI_NOCOMPANDING;
-  hsai_BlockA2.Init.TriState = SAI_OUTPUT_NOTRELEASED;
-  hsai_BlockA2.FrameInit.FrameLength = 64;
-  hsai_BlockA2.FrameInit.ActiveFrameLength = 32;
-  hsai_BlockA2.FrameInit.FSDefinition = SAI_FS_STARTFRAME;
-  hsai_BlockA2.FrameInit.FSPolarity = SAI_FS_ACTIVE_LOW;
-  hsai_BlockA2.FrameInit.FSOffset = SAI_FS_FIRSTBIT;
-  hsai_BlockA2.SlotInit.FirstBitOffset = 0;
-  hsai_BlockA2.SlotInit.SlotSize = SAI_SLOTSIZE_16B;
-  hsai_BlockA2.SlotInit.SlotNumber = 4;
-  hsai_BlockA2.SlotInit.SlotActive = 0x0000000F;
-  if (HAL_SAI_Init(&hsai_BlockA2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  hsai_BlockB2.Instance = SAI2_Block_B;
-  hsai_BlockB2.Init.Protocol = SAI_FREE_PROTOCOL;
-  hsai_BlockB2.Init.AudioMode = SAI_MODESLAVE_RX;
-  hsai_BlockB2.Init.DataSize = SAI_DATASIZE_16;
-  hsai_BlockB2.Init.FirstBit = SAI_FIRSTBIT_MSB;
-  hsai_BlockB2.Init.ClockStrobing = SAI_CLOCKSTROBING_RISINGEDGE;
-  hsai_BlockB2.Init.Synchro = SAI_SYNCHRONOUS;
-  hsai_BlockB2.Init.OutputDrive = SAI_OUTPUTDRIVE_DISABLE;
-  hsai_BlockB2.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_1QF;
-  hsai_BlockB2.Init.SynchroExt = SAI_SYNCEXT_DISABLE;
-  hsai_BlockB2.Init.MonoStereoMode = SAI_STEREOMODE;
-  hsai_BlockB2.Init.CompandingMode = SAI_NOCOMPANDING;
-  hsai_BlockB2.Init.TriState = SAI_OUTPUT_NOTRELEASED;
-  hsai_BlockB2.FrameInit.FrameLength = 64;
-  hsai_BlockB2.FrameInit.ActiveFrameLength = 32;
-  hsai_BlockB2.FrameInit.FSDefinition = SAI_FS_STARTFRAME;
-  hsai_BlockB2.FrameInit.FSPolarity = SAI_FS_ACTIVE_LOW;
-  hsai_BlockB2.FrameInit.FSOffset = SAI_FS_FIRSTBIT;
-  hsai_BlockB2.SlotInit.FirstBitOffset = 0;
-  hsai_BlockB2.SlotInit.SlotSize = SAI_SLOTSIZE_16B;
-  hsai_BlockB2.SlotInit.SlotNumber = 4;
-  hsai_BlockB2.SlotInit.SlotActive = 0x0000000F;
-  if (HAL_SAI_Init(&hsai_BlockB2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN SAI2_Init 2 */
-
-  /* USER CODE END SAI2_Init 2 */
-
 }
 
 /**
@@ -652,37 +709,37 @@ static void MX_TIM12_Init(void)
 }
 
 /**
-  * @brief UART5 Initialization Function
+  * @brief UART4 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_UART5_Init(void)
+static void MX_UART4_Init(void)
 {
 
-  /* USER CODE BEGIN UART5_Init 0 */
+  /* USER CODE BEGIN UART4_Init 0 */
 
-  /* USER CODE END UART5_Init 0 */
+  /* USER CODE END UART4_Init 0 */
 
-  /* USER CODE BEGIN UART5_Init 1 */
+  /* USER CODE BEGIN UART4_Init 1 */
 
-  /* USER CODE END UART5_Init 1 */
-  huart5.Instance = UART5;
-  huart5.Init.BaudRate = 115200;
-  huart5.Init.WordLength = UART_WORDLENGTH_8B;
-  huart5.Init.StopBits = UART_STOPBITS_1;
-  huart5.Init.Parity = UART_PARITY_NONE;
-  huart5.Init.Mode = UART_MODE_TX_RX;
-  huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart5.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart5.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart5.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart5) != HAL_OK)
+  /* USER CODE END UART4_Init 1 */
+  huart4.Instance = UART4;
+  huart4.Init.BaudRate = 115200;
+  huart4.Init.WordLength = UART_WORDLENGTH_8B;
+  huart4.Init.StopBits = UART_STOPBITS_1;
+  huart4.Init.Parity = UART_PARITY_NONE;
+  huart4.Init.Mode = UART_MODE_TX_RX;
+  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart4.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart4.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart4) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN UART5_Init 2 */
+  /* USER CODE BEGIN UART4_Init 2 */
 
-  /* USER CODE END UART5_Init 2 */
+  /* USER CODE END UART4_Init 2 */
 
 }
 
@@ -722,37 +779,72 @@ static void MX_UART7_Init(void)
 }
 
 /**
-  * @brief USART6 Initialization Function
+  * @brief USART2 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_USART6_UART_Init(void)
+static void MX_USART2_UART_Init(void)
 {
 
-  /* USER CODE BEGIN USART6_Init 0 */
+  /* USER CODE BEGIN USART2_Init 0 */
 
-  /* USER CODE END USART6_Init 0 */
+  /* USER CODE END USART2_Init 0 */
 
-  /* USER CODE BEGIN USART6_Init 1 */
+  /* USER CODE BEGIN USART2_Init 1 */
 
-  /* USER CODE END USART6_Init 1 */
-  huart6.Instance = USART6;
-  huart6.Init.BaudRate = 12000000;
-  huart6.Init.WordLength = UART_WORDLENGTH_8B;
-  huart6.Init.StopBits = UART_STOPBITS_1;
-  huart6.Init.Parity = UART_PARITY_NONE;
-  huart6.Init.Mode = UART_MODE_TX_RX;
-  huart6.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart6.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart6.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart6.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart6) != HAL_OK)
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART6_Init 2 */
+  /* USER CODE BEGIN USART2_Init 2 */
 
-  /* USER CODE END USART6_Init 2 */
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 115200;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
 
 }
 
@@ -762,28 +854,21 @@ static void MX_USART6_UART_Init(void)
 static void MX_DMA_Init(void) 
 {
   /* DMA controller clock enable */
-  __HAL_RCC_DMA2_CLK_ENABLE();
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
   /* DMA1_Stream1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 1, 1);
   HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
+  /* DMA1_Stream2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 1, 2);
+  HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
   /* DMA1_Stream3_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
-  /* DMA2_Stream1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 1, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
-  /* DMA2_Stream4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream4_IRQn, 1, 1);
-  HAL_NVIC_EnableIRQ(DMA2_Stream4_IRQn);
-  /* DMA2_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 1, 2);
-  HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
-  /* DMA2_Stream7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 1, 3);
-  HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
+  /* DMA1_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 1, 3);
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
 
 }
 
@@ -814,13 +899,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOG, WIFI_RST_Pin|WIFI_GPIO_0_Pin|PMOD_GPIO_0_Pin|USB_OTGFS_PPWR_EN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, WIFI_GPIO_2_Pin|WIFI_CH_PD_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, STMOD_UART4_RXD_s_Pin|ARD_D2_GPIO_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOI, PMOD_SPI2_MOSI_Pin|PMOD_SPI2_MISO_Pin|GPIO_PIN_10, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(WIFI_CH_PD_GPIO_Port, WIFI_CH_PD_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(PMOD_SEL_0_GPIO_Port, PMOD_SEL_0_Pin, GPIO_PIN_SET);
@@ -831,6 +913,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOH, PMOD_GPIO_1_Pin|ARD_D4_GPIO_Pin|USB_OTGHS_PPWR_EN_Pin|CTP_RST_Pin 
                           |LCD_RST_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(ARD_D2_GPIO_GPIO_Port, ARD_D2_GPIO_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, USB_OTG_HS_ID_Pin|SYS_LD_USER2_Pin, GPIO_PIN_RESET);
@@ -887,15 +972,23 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PSRAM_NE1_Pin LCD_PSRAM_D2_Pin LCD_PSRAM_NWE_Pin LCD_PSRAM_D3_Pin 
                            LCD_PSRAM_NWED4_Pin LCD_PSRAM_D1_Pin LCD_PSRAM_D0_Pin PSRAM_A17_Pin 
-                           PSRAM_A16_Pin LCD_PSRAM_D15_Pin LCD_PSRAM_D14_Pin LCD_PSRAM_D13_Pin */
+                           PSRAM_A16_Pin LCD_PSRAM_D15_Pin LCD_PSRAM_D14_Pin */
   GPIO_InitStruct.Pin = PSRAM_NE1_Pin|LCD_PSRAM_D2_Pin|LCD_PSRAM_NWE_Pin|LCD_PSRAM_D3_Pin 
                           |LCD_PSRAM_NWED4_Pin|LCD_PSRAM_D1_Pin|LCD_PSRAM_D0_Pin|PSRAM_A17_Pin 
-                          |PSRAM_A16_Pin|LCD_PSRAM_D15_Pin|LCD_PSRAM_D14_Pin|LCD_PSRAM_D13_Pin;
+                          |PSRAM_A16_Pin|LCD_PSRAM_D15_Pin|LCD_PSRAM_D14_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : UART_TXD_WIFI_RX_Pin */
+  GPIO_InitStruct.Pin = UART_TXD_WIFI_RX_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF8_UART5;
+  HAL_GPIO_Init(UART_TXD_WIFI_RX_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : NC1_Pin */
   GPIO_InitStruct.Pin = NC1_Pin;
@@ -919,19 +1012,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SAI2_INT_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : WIFI_GPIO_2_Pin WIFI_CH_PD_Pin */
-  GPIO_InitStruct.Pin = WIFI_GPIO_2_Pin|WIFI_CH_PD_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  /*Configure GPIO pin : SAI2_SD_B_Pin */
+  GPIO_InitStruct.Pin = SAI2_SD_B_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : STMOD_UART4_RXD_s_Pin ARD_D2_GPIO_Pin */
-  GPIO_InitStruct.Pin = STMOD_UART4_RXD_s_Pin|ARD_D2_GPIO_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  GPIO_InitStruct.Alternate = GPIO_AF10_SAI2;
+  HAL_GPIO_Init(SAI2_SD_B_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : QSPI_D1_Pin QSPI_D0_Pin */
   GPIO_InitStruct.Pin = QSPI_D1_Pin|QSPI_D0_Pin;
@@ -948,6 +1035,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SAI2_FS_A_Pin SAI2_SD_A_Pin SAI2_SCK_A_Pin SAI2_MCLK_A_Pin */
+  GPIO_InitStruct.Pin = SAI2_FS_A_Pin|SAI2_SD_A_Pin|SAI2_SCK_A_Pin|SAI2_MCLK_A_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF10_SAI2;
+  HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LCD_NE_Pin PSRAM_A15_Pin PSRAM_A14_Pin PSRAM_A13_Pin 
                            PSRAM_A12_Pin PSRAM_A11_Pin PSRAM_A10_Pin */
@@ -971,6 +1066,21 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(CTP_INT_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : WIFI_CH_PD_Pin */
+  GPIO_InitStruct.Pin = WIFI_CH_PD_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(WIFI_CH_PD_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : UART_RXD_WIFI_TX_Pin */
+  GPIO_InitStruct.Pin = UART_RXD_WIFI_TX_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF8_UART5;
+  HAL_GPIO_Init(UART_RXD_WIFI_TX_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PMOD_SEL_0_Pin PMOD_GPIO_1_Pin ARD_D4_GPIO_Pin USB_OTGHS_PPWR_EN_Pin 
                            CTP_RST_Pin LCD_RST_Pin */
@@ -1008,14 +1118,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : STMOD_UART4_TXD_Pin STMOD_UART4_RXD_Pin */
-  GPIO_InitStruct.Pin = STMOD_UART4_TXD_Pin|STMOD_UART4_RXD_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF8_UART4;
-  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
-
   /*Configure GPIO pin : PA9 */
   GPIO_InitStruct.Pin = GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -1035,6 +1137,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(LCD_TE_INT_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : VCP_RX_Pin VCP_TX_Pin */
+  GPIO_InitStruct.Pin = VCP_RX_Pin|VCP_TX_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF8_USART6;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : ARD_D15_STMOD_I2C2_SCL_Pin ARD_D14_STMOD_I2C2_SDA_Pin */
   GPIO_InitStruct.Pin = ARD_D15_STMOD_I2C2_SCL_Pin|ARD_D14_STMOD_I2C2_SDA_Pin;
@@ -1100,14 +1210,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ARD_D1_USART2_TX_Pin ARD_D0_USART2_RX_Pin */
-  GPIO_InitStruct.Pin = ARD_D1_USART2_TX_Pin|ARD_D0_USART2_RX_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
   /*Configure GPIO pin : ARD_D13_SPI1_SCK_Pin */
   GPIO_InitStruct.Pin = ARD_D13_SPI1_SCK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -1116,6 +1218,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
   HAL_GPIO_Init(ARD_D13_SPI1_SCK_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : ARD_D2_GPIO_Pin */
+  GPIO_InitStruct.Pin = ARD_D2_GPIO_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(ARD_D2_GPIO_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : USB_OTG_HS_ID_Pin SYS_LD_USER2_Pin */
   GPIO_InitStruct.Pin = USB_OTG_HS_ID_Pin|SYS_LD_USER2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -1123,8 +1232,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : USB_OTG_HS_VBUS_Pin USB_OTGFS_OVCR_INT_Pin PMOD_INT_Pin */
-  GPIO_InitStruct.Pin = USB_OTG_HS_VBUS_Pin|USB_OTGFS_OVCR_INT_Pin|PMOD_INT_Pin;
+  /*Configure GPIO pins : USB_OTG_HS_VBUS_Pin USB_OTGFS_OVCR_INT_Pin */
+  GPIO_InitStruct.Pin = USB_OTG_HS_VBUS_Pin|USB_OTGFS_OVCR_INT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
