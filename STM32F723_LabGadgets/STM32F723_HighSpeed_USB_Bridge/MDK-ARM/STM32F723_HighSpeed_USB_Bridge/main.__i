@@ -1,0 +1,6 @@
+--c99 -c --cpu Cortex-M7.fp.sp -D__MICROLIB -g -O2 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include
+-I.\RTE\_STM32F723_HighSpeed_USB_Bridge
+-I"D:\Program Files (x86)\Keil\Packs\ARM\CMSIS\5.5.1\CMSIS\Core\Include"
+-I"D:\Program Files (x86)\Keil\Packs\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include"
+-D__UVISION_VERSION="527" -D_RTE_ -DSTM32F723xx -DUSE_HAL_DRIVER -DSTM32F723xx
+-o stm32f723_highspeed_usb_bridge\main.o --omf_browse stm32f723_highspeed_usb_bridge\main.crf --depend stm32f723_highspeed_usb_bridge\main.d "../Src/main.c"
