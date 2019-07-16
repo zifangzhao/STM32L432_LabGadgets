@@ -1,4 +1,4 @@
---cpu Cortex-M7.fp.sp
+--cpu Cortex-M7.fp.sp --fpu=FPv4-SP
 "stm32f723_highspeed_usb_bridge\startup_stm32f723xx.o"
 "stm32f723_highspeed_usb_bridge\datamgr.o"
 "stm32f723_highspeed_usb_bridge\ce32_ioncom.o"
@@ -37,6 +37,6 @@
 "stm32f723_highspeed_usb_bridge\usbd_ioreq.o"
 "stm32f723_highspeed_usb_bridge\usbd_cdc.o"
 --library_type=microlib --strict --scatter "STM32F723_HighSpeed_USB_Bridge\STM32F723_HighSpeed_USB_Bridge.sct"
---summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--summary_stderr --info summarysizes --map --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
 --list "STM32F723_HighSpeed_USB_Bridge.map" -o STM32F723_HighSpeed_USB_Bridge\STM32F723_HighSpeed_USB_Bridge.axf

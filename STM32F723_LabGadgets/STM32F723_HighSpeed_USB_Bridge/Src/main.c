@@ -208,6 +208,11 @@ int main(void)
 	HAL_GPIO_WritePin(GPIOI,GPIO_PIN_10,GPIO_PIN_RESET);//switch Pmode
 	HAL_GPIO_WritePin(GPIOH,GPIO_PIN_15,GPIO_PIN_RESET);//switch Pmode
 	
+	HAL_GPIO_WritePin(GPIOI,GPIO_PIN_0,GPIO_PIN_SET);//LED0
+	HAL_GPIO_WritePin(GPIOI,GPIO_PIN_3,GPIO_PIN_SET);//LED1
+	HAL_GPIO_WritePin(GPIOI,GPIO_PIN_2,GPIO_PIN_SET);//LED2
+	HAL_GPIO_WritePin(GPIOI,GPIO_PIN_1,GPIO_PIN_SET);//LED3
+	
 	HAL_GPIO_WritePin(GPIOI,GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3,GPIO_PIN_SET);
 	dataMGR_init(&MGR_TX,(char*) data_buf_TX,sizeof(data_buf_TX));					//FIFO setup 
 	dataMGR_init(&MGR_RX1,(char*) data_buf_RX1,sizeof(data_buf_RX1));					//RX FIFO setup 
@@ -288,6 +293,7 @@ int main(void)
 					{
 						if((uint8_t)dataMGR_deQueue_byte(&IC_handle1.RX_MGR,0)==0xd5)
 						{
+							HAL_GPIO_WritePin(GPIOI,GPIO_PIN_0,GPIO_PIN_SET);
 							dataMGR_enQueue_byte(&MGR_CDC,0x66);
 							dataMGR_enQueue_byte(&MGR_CDC,0x55);
 							dataMGR_enQueue_byte(&MGR_CDC,0x5d);
@@ -305,6 +311,7 @@ int main(void)
 //								}
 								dataMGR_enQueue_byte(&MGR_CDC,temp);
 							}
+							HAL_GPIO_WritePin(GPIOI,GPIO_PIN_0,GPIO_PIN_RESET);
 							//break;
 						}
 					}
@@ -322,6 +329,7 @@ int main(void)
 					{
 						if((uint8_t)dataMGR_deQueue_byte(&IC_handle2.RX_MGR,0)==0xd5)
 						{
+							HAL_GPIO_WritePin(GPIOI,GPIO_PIN_3,GPIO_PIN_SET);
 							dataMGR_enQueue_byte(&MGR_CDC,0x66);
 							dataMGR_enQueue_byte(&MGR_CDC,0x55);
 							dataMGR_enQueue_byte(&MGR_CDC,0x5d);
@@ -334,6 +342,7 @@ int main(void)
 								dataMGR_enQueue_byte(&MGR_CDC,(uint8_t)dataMGR_deQueue_byte(&IC_handle2.RX_MGR,0));
 							}
 							//break;
+							HAL_GPIO_WritePin(GPIOI,GPIO_PIN_3,GPIO_PIN_RESET);
 						}
 					}
 				}
@@ -351,6 +360,7 @@ int main(void)
 					{
 						if((uint8_t)dataMGR_deQueue_byte(&IC_handle3.RX_MGR,0)==0xd5)
 						{
+							HAL_GPIO_WritePin(GPIOI,GPIO_PIN_2,GPIO_PIN_SET);
 							dataMGR_enQueue_byte(&MGR_CDC,0x66);
 							dataMGR_enQueue_byte(&MGR_CDC,0x55);
 							dataMGR_enQueue_byte(&MGR_CDC,0x5d);
@@ -362,6 +372,7 @@ int main(void)
 								}
 								dataMGR_enQueue_byte(&MGR_CDC,(uint8_t)dataMGR_deQueue_byte(&IC_handle3.RX_MGR,0));
 							}
+							HAL_GPIO_WritePin(GPIOI,GPIO_PIN_2,GPIO_PIN_RESET);
 							//break;
 						}
 					}
@@ -379,6 +390,7 @@ int main(void)
 					{
 						if((uint8_t)dataMGR_deQueue_byte(&IC_handle4.RX_MGR,0)==0xd5)
 						{
+							HAL_GPIO_WritePin(GPIOI,GPIO_PIN_1,GPIO_PIN_SET);
 							dataMGR_enQueue_byte(&MGR_CDC,0x66);
 							dataMGR_enQueue_byte(&MGR_CDC,0x55);
 							dataMGR_enQueue_byte(&MGR_CDC,0x5d);
@@ -390,6 +402,7 @@ int main(void)
 								}
 								dataMGR_enQueue_byte(&MGR_CDC,(uint8_t)dataMGR_deQueue_byte(&IC_handle4.RX_MGR,0));
 							}
+							HAL_GPIO_WritePin(GPIOI,GPIO_PIN_1,GPIO_PIN_RESET);
 							//break;
 						}
 					}

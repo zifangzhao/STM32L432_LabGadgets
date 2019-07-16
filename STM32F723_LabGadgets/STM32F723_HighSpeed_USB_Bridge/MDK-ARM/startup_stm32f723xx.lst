@@ -891,14 +891,13 @@ ARM Macro Assembler    Page 14
   459 0000001C                 END
               00000000 
               00000000 
-Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M7.fp.sp --apcs=
-interwork --depend=stm32f723_highspeed_usb_bridge\startup_stm32f723xx.d -ostm32
-f723_highspeed_usb_bridge\startup_stm32f723xx.o -I.\RTE\_STM32F723_HighSpeed_US
-B_Bridge -IC:\Keil_v5\ARM\PACK\ARM\CMSIS\5.5.1\CMSIS\Core\Include -IC:\Keil_v5\
-ARM\PACK\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include --
-predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 527" --predef
-ine="_RTE_ SETA 1" --predefine="STM32F723xx SETA 1" --list=startup_stm32f723xx.
-lst startup_stm32f723xx.s
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M7.fp.sp --fpu=F
+Pv4-SP --apcs=interwork --depend=stm32f723_highspeed_usb_bridge\startup_stm32f7
+23xx.d -ostm32f723_highspeed_usb_bridge\startup_stm32f723xx.o -ID:\code\uC\STM3
+2_LabGadgets\STM32F723_LabGadgets\STM32F723_HighSpeed_USB_Bridge\MDK-ARM\RTE -I
+C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.5.1\CMSIS\Core\Include --predefine="__MICROLIB 
+SETA 1" --predefine="__UVISION_VERSION SETA 515" --predefine="_RTE_ SETA 1" --l
+ist=startup_stm32f723xx.lst startup_stm32f723xx.s
 
 
 
@@ -2001,4 +2000,4 @@ Symbol: __main
       At line 210 in file startup_stm32f723xx.s
 Comment: __main used once
 2 symbols
-447 symbols in table
+446 symbols in table
