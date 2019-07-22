@@ -320,7 +320,6 @@ static int8_t CDC_Control_HS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 		//SET_BIT(USART6->CR3, USART_CR3_DMAT); //enable UART_DMA_request
 		
 		UART_DISABLE(IC_handle4.huart->Instance);
-		IC_handle4.huart->Instance = UART7;
 		IC_handle4.huart->Init.BaudRate = *(uint32_t*)pbuf;
 		IC_handle4.huart->Init.WordLength = UART_WORDLENGTH_8B;
 		IC_handle4.huart->Init.StopBits = UART_STOPBITS_1;
