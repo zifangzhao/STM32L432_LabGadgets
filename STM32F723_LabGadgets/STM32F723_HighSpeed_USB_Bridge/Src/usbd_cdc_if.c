@@ -428,7 +428,8 @@ static int8_t CDC_Receive_HS(uint8_t* Buf, uint32_t *Len)
 	{
 		dataMGR_enQueue_byte(&MGR_TX,Buf[i]);
 	}
-	
+	SET_BIT(huart7.Instance->CR1, USART_CR1_TXEIE); // ENABLE TXE IT to start transmission
+
   return (USBD_OK);
   /* USER CODE END 11 */
 }
